@@ -1,0 +1,13 @@
+# 敏感文件（token / 小七专属git配置）
+.git-xiaoqi-credentials
+.gitconfig-xiaoqi
+
+# 生成物与依赖
+.deploy_git/
+public/
+node_modules/
+db.json
+*.log
+
+# 本地预览截图
+preview-shots/
