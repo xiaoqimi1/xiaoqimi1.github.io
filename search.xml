@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search> 
+  
+  
+    
+    <entry>
+      <title>我的生活碎片</title>
+      <link href="/2026/09/20/life-fragments/"/>
+      <url>/2026/09/20/life-fragments/</url>
+      
+        <content type="html"><![CDATA[<p>最近收集了一些喜欢的小碎片，想好好珍藏起来 🍀</p><h2 id="傍晚的天空"><a href="#傍晚的天空" class="headerlink" title="傍晚的天空"></a>傍晚的天空</h2><p>看到好看的晚霞，忍不住停下来拍一张。天空是粉色的，像今天的心情。</p><p><img src="/img/gallery/sunset.svg" alt="晚霞"></p><h2 id="月亮"><a href="#月亮" class="headerlink" title="月亮"></a>月亮</h2><p>晚上回家的路上，抬头看到很圆的月亮，忽然觉得今天也不算太糟。</p><p><img src="/img/gallery/moon.svg" alt="月亮"></p><h2 id="路边的小花"><a href="#路边的小花" class="headerlink" title="路边的小花"></a>路边的小花</h2><p>路边开了一朵小花，蹲下来看了好久。小小的，却很认真地在开。</p><p><img src="/img/gallery/flower.svg" alt="小花"></p><div class="note success flat"><p>以后的生活碎片，都会好好收在这里。</p></div>]]></content>
+      
+      
+      <categories>
+          
+          <category> 日记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 生活 </tag>
+            
+            <tag> 照片 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>博客写作功能演示</title>
+      <link href="/2026/09/20/blog-demo/"/>
+      <url>/2026/09/20/blog-demo/</url>
+      
+        <content type="html"><![CDATA[<p>这是一篇功能演示文章，把写博客常用的语法都展示一遍，以后写文章照着用就行～</p><h2 id="标题与文字"><a href="#标题与文字" class="headerlink" title="标题与文字"></a>标题与文字</h2><p>一级到六级标题直接用 <code>#</code> 到 <code>######</code>。</p><p><strong>加粗</strong>、<em>斜体</em>、<del>删除线</del>、<code>行内代码</code>，都是 Markdown 的标准语法。</p><h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><blockquote><p>生活明朗，万物可爱。<br>人间值得，未来可期。</p></blockquote><h2 id="列表"><a href="#列表" class="headerlink" title="列表"></a>列表</h2><p>无序列表：</p><ul><li>苹果</li><li>香蕉</li><li>橘子</li></ul><p>有序列表：</p><ol><li>起床</li><li>吃早餐</li><li>开始美好的一天</li></ol><h2 id="代码块"><a href="#代码块" class="headerlink" title="代码块"></a>代码块</h2><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title function_">hello</span> = (<span class="params"></span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Hello, World!&quot;</span>);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><h2 id="提示框（Butterfly-note-插件）"><a href="#提示框（Butterfly-note-插件）" class="headerlink" title="提示框（Butterfly note 插件）"></a>提示框（Butterfly note 插件）</h2><div class="note primary flat"><p>主要提示信息</p></div><div class="note success flat"><p>成功提示信息</p></div><div class="note warning flat"><p>警告提示信息</p></div><div class="note danger flat"><p>危险提示信息</p></div><h2 id="图片"><a href="#图片" class="headerlink" title="图片"></a>图片</h2><p><img src="/img/gallery/sunset.svg" alt="示例图片"></p><h2 id="图册（Butterfly-gallery-插件）"><a href="#图册（Butterfly-gallery-插件）" class="headerlink" title="图册（Butterfly gallery 插件）"></a>图册（Butterfly gallery 插件）</h2><div class="gallery-container" data-type="data" data-button="" data-limit="10" data-first="10">    <div class="gallery-items">[{"url":"/img/gallery/sunset.svg","alt":"落日","title":""},{"url":"/img/gallery/moon.svg","alt":"月亮","title":""},{"url":"/img/gallery/clover.svg","alt":"幸运草","title":""},{"url":"/img/gallery/flower.svg","alt":"小花","title":""}]</div>  </div><p>点击图片可以放大预览哦（已开启 lightbox）。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 教程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 教程 </tag>
+            
+            <tag> 博客 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>欢迎来到我的小世界</title>
+      <link href="/2026/09/20/welcome/"/>
+      <url>/2026/09/20/welcome/</url>
+      
+        <content type="html"><![CDATA[<p>大家好呀，我是小七 🌸</p><p>这里是我的第一个博客，用来记录生活里那些细碎又闪闪发光的小事。</p><blockquote><p>愿你遍历山河，仍觉人间值得。</p></blockquote><h2 id="这里会有什么"><a href="#这里会有什么" class="headerlink" title="这里会有什么"></a>这里会有什么</h2><ul><li>📝 一些生活的流水账</li><li>☁️ 偶尔冒出来的小感想</li><li>🎨 喜欢的照片和风景</li><li>💕 还有一些舍不得忘记的小瞬间</li></ul><h2 id="写给自己"><a href="#写给自己" class="headerlink" title="写给自己"></a>写给自己</h2><p>以后回头看的时候，希望能通过这些文字，重新想起今天的风、今天的云，和今天的心情。</p><div class="note info flat"><p>本篇只是示例文章，用来展示博客的样子。以后想写什么，就由我自己做主啦～</p></div><p>那就这样开始吧。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 日记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 随笔 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+  
+  
+</search>
