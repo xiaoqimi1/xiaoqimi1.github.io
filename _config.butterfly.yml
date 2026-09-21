@@ -265,7 +265,7 @@ footer:
   nav:
   owner:
     enable: true
-    since: 2024
+    since: 2026
   # Copyright of theme and framework
   copyright:
     enable: false
@@ -1070,6 +1070,11 @@ inject:
     - '  #footer { background-color: rgba(0, 0, 0, 0.45) !important; }'
     - '  #footer::before { background-color: transparent !important; }'
     - '  #footer .footer-other { padding: 12px 20px !important; }'
+    - '  /* 移除进入/切换时的背景缩放与过渡动画，避免卡顿 */'
+    - '  #page-header { transition: none !important; }'
+    - '  #page-header:not(.full_page), #nav.show { animation: none !important; }'
+    - '  #web_bg.bg-animation { animation: none !important; }'
+    - '  #site-title, #site-subtitle { animation: none !important; }'
     - </style>
   bottom:
     # - <script src="xxxx"></script>
