@@ -1066,9 +1066,8 @@ inject:
     - <style>
     - '  /* 背景图半透明遮罩 */'
     - '  #web_bg::after { content: ""; position: fixed; inset: 0; z-index: -99; background: rgba(0, 0, 0, 0.35); pointer-events: none; }'
-    - '  /* 消除背景"缩放"：local→scroll、淡入缩短、高度用 100lvh 防移动端 URL栏缩放 */'
-    - '  #web_bg { background-attachment: scroll !important; height: 100vh !important; height: 100lvh !important; }'
-    - '  #web_bg.bg-animation { animation-duration: 0.5s !important; }'
+    - '  /* 移动端下滑背景缩放：高度改用 100lvh 防 URL栏收起时 cover 重算 */'
+    - '  #web_bg { height: 100vh !important; height: 100lvh !important; }'
     - '  /* footer：改色 + 减小 */'
     - '  #footer { background-color: rgba(0, 0, 0, 0.45) !important; }'
     - '  #footer::before { background-color: transparent !important; }'
