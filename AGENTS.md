@@ -66,6 +66,7 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 
 1. **YAML 注释陷阱**：`_config.butterfly.yml` 里 `inject.head` 的每行 CSS 若以 `#` 开头会被 YAML 当成注释吞掉，必须用单引号包裹，例如 `- '  #footer { ... }'`。
 2. **背景统一方案**：全站背景由 `#web_bg` 一个固定图层显示，`inject` 里把 `#page-header` 背景设为透明，避免首页（100vh+fixed）与内页（短横幅）对同一张壁纸产生不同裁剪，导致切换页面时背景"缩放"。**不要**把 `background-attachment: fixed` 加回 header。
+   - 移动端背景"缩放"（下滑时背景突然变大）：是 `#web_bg { height: 100% }` 跟随视口高度变化，URL 栏收起时视口变高、`cover` 重算导致。已在 inject 里改为 `height: 100lvh !important`（大视口恒定高度）修复，勿改回 `100%` 或 `100vh`。
 3. `source/CNAME` 会进入 `public/` 根目录，是自定义域名生效的关键，勿删。
 4. 修改主题时优先用 `inject.head` 注入 CSS，尽量不改 `themes/butterfly/` 源码，便于升级。
 5. 本机 `hexo server` 会常驻后台，重建前先停掉（用端口 PID 精确 kill，别用 `pkill -f 'hexo server'`，会误杀执行命令的 shell）。
