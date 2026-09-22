@@ -14,6 +14,7 @@
 - Hexo `^8.1`，主题 `hexo-theme-butterfly 5.7`（源码放在 `themes/butterfly/`，随仓库一起管理）
 - 包管理：**pnpm**（Node 24，`.nvm` 管理）。`pnpm-workspace.yaml` 里有 `allowBuilds: hexo-util: true`（pnpm10+ 默认拦截依赖构建脚本，必须保留否则 hexo-util 无法编译）
 - 渲染插件：`hexo-renderer-pug`、`hexo-renderer-stylus`、`hexo-generator-search`（本地搜索）、`hexo-generator-feed`
+- 增强插件：`hexo-generator-sitemap`（sitemap.xml）、`hexo-wordcount`（字数/阅读时长，主题 `wordcount.enable: true`）、`hexo-filter-nofollow`（外链 nofollow）、图片懒加载用主题自带 `lazyload.enable: true, native: true`（浏览器原生，无需插件）
 - PWA：`hexo-offline`（基于 workbox-build 生成 Service Worker + 注入注册脚本）
 - **不要**安装/使用 `hexo-deployer-git`，部署走 GitHub Actions
 

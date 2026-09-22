@@ -112,5 +112,17 @@ feed:
   path: atom.xml
   limit: 20
 
+# Sitemap (for hexo-generator-sitemap)
+sitemap:
+  path: sitemap.xml
+
+# External links: add nofollow (for hexo-filter-nofollow)
+nofollow:
+  enable: true
+  field: site
+  exclude:
+    - '777.hanphone.cn'
+    - 'xiaoqimi1.github.io'
+
 # Deployment
 ## 由 GitHub Actions（.github/workflows/deploy.yml）自动构建部署到 Pages，无需本地 deploy
