@@ -62,10 +62,44 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 - 关键文件：
   - `hexo-offline.config.cjs`：workbox 配置（预缓存 glob、jsdelivr/unpkg/字体 CDN 运行时缓存、`skipWaiting` + `clientsClaim`）
   - `source/manifest.json`：应用清单（name/theme_color/start_url/icons），构建后落到 `public/` 根目录
-  - `source/img/pwa/`：图标由 `app-icon.svg`（全铺满渐变 + "七"字）生成，勿直接用 `avatar.svg`（圆形有透明角，不适合做应用图标）
+  - `source/img/pwa/`：图标由 `app-icon.svg`（全铺满渐变 + "七"字）生成，**不要用头像照片**（照片不适合做应用图标，且旧 `avatar.svg` 圆形有透明角也已被删除）
 - 换图标流程：改 `source/img/pwa/app-icon.svg`，用 sharp/ImageMagick 等重新导出各尺寸 PNG（icon-192/512、maskable-192/512、apple-touch-icon 180、favicon-16/32），保持 `manifest.json` 里路径不变。
 - 已验证：`pnpm run build` 后 `public/` 含 `service-worker.js`（预缓存全部静态资源，约 1.5MB）、`manifest.json`、图标，`index.html` 末尾注入 SW 注册脚本。
 - 注意：SW 注册脚本只在 `hexo generate` 阶段写入 `public/`，本地 `hexo server` 预览页不会显示（属正常，部署即生效）。PWA 需 HTTPS，线上已满足。
+
+## 远程图片接收流程（OpenChamber 附件）
+
+用户通过 OpenChamber 远程对话时，发的图片附件**不会落到磁盘**，而是以 base64 存在 opencode 会话库里。新会话收到"图片已发给你"这类消息时，按以下步骤提取：
+
+1. 查最新附件（找 `"type":"file"` 的 part）：
+```bash
+python3 -c "
+import sqlite3, json
+con=sqlite3.connect('/home/hanphone/.local/share/opencode/opencode.db')
+for r in con.execute(\"SELECT id, time_created, data FROM part ORDER BY time_created DESC LIMIT 20\"):
+    d=json.loads(r[2])
+    if d.get('type')=='file':
+        print(r[0], r[1], d.get('filename'), d.get('mime'))
+"
+```
+2. 提取并保存为文件（把 `<part_id>` 换成上面输出的 id）：
+```bash
+python3 -c "
+import sqlite3, json, base64
+con=sqlite3.connect('/home/hanphone/.local/share/opencode/opencode.db')
+d=json.loads(con.execute(\"SELECT data FROM part WHERE id='<part_id>'\").fetchone()[0])
+url=d['url']; ext=d['mime'].split('/')[-1]
+open('/tmp/opencode/attachment.'+ext,'wb').write(base64.b64decode(url.split(',',1)[1]))
+print('saved /tmp/opencode/attachment.'+ext)
+"
+```
+3. 校验：`file /tmp/opencode/attachment.jpg` + sharp 读尺寸 → 拷进 `source/img/`（或 `source/img/pwa/` 等）。
+
+注意事项：
+- 本会话的 AI 模型**无法直接查看图片内容**（无视觉能力）。拿到图后应向用户确认图片内容/主体位置，再决定裁切。
+- 定位照片主体可用 sharp 边缘方差启发式（下采样 → 分块方差 → 加权质心），或直接问用户主体在画面哪个区域。
+- 竖版照片做方形头像默认居中裁，主体偏离中心时按主体位置重裁。
+- 头像容器是 110px 圆形 + `object-fit: cover`，最终产物生成 400×400 即可，避免把原图大文件塞进站点。
 
 ## 账号与凭据
 

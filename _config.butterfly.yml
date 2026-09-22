@@ -57,7 +57,7 @@ social:
 favicon: /img/pwa/favicon-32x32.png
 
 avatar:
-  img: /img/avatar.svg
+  img: /img/avatar.jpg
   effect: false
 
 # Disable all banner images

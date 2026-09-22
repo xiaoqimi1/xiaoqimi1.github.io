@@ -34,9 +34,10 @@ url: https://xiaoqimi1.github.io  # 站点地址（勿改成 localhost）
 
 ## 头像
 
-- 文件：`source/img/avatar.svg`（占位头像，粉色圆 + "七"字）
-- 配置：`_config.butterfly.yml` 的 `avatar.img`
-- 换成真实头像：把图片放进 `source/img/`，改 `avatar.img` 路径
+- 文件：`source/img/avatar.jpg`（真实照片头像，400×400 居中裁切，约 33KB）
+- 配置：`_config.butterfly.yml` 的 `avatar.img`（当前 `/img/avatar.jpg`）
+- 换头像：把新图放进 `source/img/`，改 `avatar.img` 路径（头像容器是 110px 圆形，`object-fit: cover`，竖版照片会被居中裁方）
+- 注意：照片主体不在画面中心时，需按主体位置重新裁切（可用 sharp 边缘方差定位主体）
 
 ## 导航菜单
 
