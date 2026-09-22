@@ -14,6 +14,7 @@
 - Hexo `^8.1`，主题 `hexo-theme-butterfly 5.7`（源码放在 `themes/butterfly/`，随仓库一起管理）
 - 包管理：**pnpm**（Node 24，`.nvm` 管理）。`pnpm-workspace.yaml` 里有 `allowBuilds: hexo-util: true`（pnpm10+ 默认拦截依赖构建脚本，必须保留否则 hexo-util 无法编译）
 - 渲染插件：`hexo-renderer-pug`、`hexo-renderer-stylus`、`hexo-generator-search`（本地搜索）、`hexo-generator-feed`
+- PWA：`hexo-offline`（基于 workbox-build 生成 Service Worker + 注入注册脚本）
 - **不要**安装/使用 `hexo-deployer-git`，部署走 GitHub Actions
 
 ## 目录结构
@@ -21,13 +22,16 @@
 ```
 xiaoqi-blog/
 ├── _config.yml              # Hexo 站点配置（标题/作者/url/permalink）
-├── _config.butterfly.yml    # Butterfly 主题配置（导航/背景/注入CSS）
+├── _config.butterfly.yml    # Butterfly 主题配置（导航/背景/PWA/注入CSS）
 ├── package.json             # 脚本: new/build/server/publish
 ├── pnpm-workspace.yaml      # allowBuilds（勿删）
+├── hexo-offline.config.cjs  # PWA / Service Worker 缓存配置
 ├── .github/workflows/deploy.yml  # 构建并部署到 gh-pages 分支
 ├── source/
 │   ├── _posts/*.md          # 文章（Markdown，front-matter 含 title/date/tags/categories）
 │   ├── img/                 # 图片资源（background.jpg 是壁纸背景）
+│   ├── img/pwa/             # PWA 图标（由 app-icon.svg 生成，见下文）
+│   ├── manifest.json        # PWA 应用清单（构建后进入 public 根目录）
 │   ├── CNAME                # 自定义域名 777.hanphone.cn（构建后进入 public 根目录，勿删）
 │   ├── tags|categories|about/index.md  # 三个独立页面
 └── themes/butterfly/        # 主题源码
@@ -51,6 +55,17 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 - **gh-pages 分支** = 构建产物（`public/`），由 GitHub Actions 自动生成并推送
 - GitHub Pages 设置：**Deploy from a branch → gh-pages / (root)**
 - 修改 `_config.yml` / `_config.butterfly.yml` 后必须重新 `pnpm run build` 验证，再 `git push` 触发部署
+
+## PWA（离线 / 可安装）
+
+- 由 `hexo-offline` 实现：构建时用 workbox 生成 `public/service-worker.js`，并把注册脚本注入 `public/index.html`；同时在 `<head>` 注入 manifest / apple-touch-icon / favicon 链接（来自主题自带 `pwa` 配置）。
+- 关键文件：
+  - `hexo-offline.config.cjs`：workbox 配置（预缓存 glob、jsdelivr/unpkg/字体 CDN 运行时缓存、`skipWaiting` + `clientsClaim`）
+  - `source/manifest.json`：应用清单（name/theme_color/start_url/icons），构建后落到 `public/` 根目录
+  - `source/img/pwa/`：图标由 `app-icon.svg`（全铺满渐变 + "七"字）生成，勿直接用 `avatar.svg`（圆形有透明角，不适合做应用图标）
+- 换图标流程：改 `source/img/pwa/app-icon.svg`，用 sharp/ImageMagick 等重新导出各尺寸 PNG（icon-192/512、maskable-192/512、apple-touch-icon 180、favicon-16/32），保持 `manifest.json` 里路径不变。
+- 已验证：`pnpm run build` 后 `public/` 含 `service-worker.js`（预缓存全部静态资源，约 1.5MB）、`manifest.json`、图标，`index.html` 末尾注入 SW 注册脚本。
+- 注意：SW 注册脚本只在 `hexo generate` 阶段写入 `public/`，本地 `hexo server` 预览页不会显示（属正常，部署即生效）。PWA 需 HTTPS，线上已满足。
 
 ## 账号与凭据
 

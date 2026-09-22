@@ -54,7 +54,7 @@ social:
 # Image Settings
 # --------------------------------------
 
-favicon: /img/favicon.png
+favicon: /img/pwa/favicon-32x32.png
 
 avatar:
   img: /img/avatar.svg
@@ -1028,11 +1028,12 @@ lazyload:
 # See https://github.com/JLHwung/hexo-offline
 # ---------------
 pwa:
-  enable: false
-  manifest:
-  apple_touch_icon:
-  favicon_32_32:
-  favicon_16_16:
+  enable: true
+  manifest: /manifest.json
+  theme_color: '#ff7a8f'
+  apple_touch_icon: /img/pwa/apple-touch-icon.png
+  favicon_32_32: /img/pwa/favicon-32x32.png
+  favicon_16_16: /img/pwa/favicon-16x16.png
   mask_icon:
 
 # Open graph meta tags
