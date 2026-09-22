@@ -30,7 +30,7 @@ xiaoqi-blog/
 ├── source/
 │   ├── _posts/*.md          # 文章（Markdown，front-matter 含 title/date/tags/categories）
 │   ├── img/                 # 图片资源（background.jpg 是壁纸背景）
-│   ├── img/pwa/             # PWA 图标（由 app-icon.svg 生成，见下文）
+│   ├── img/pwa/             # PWA 图标 + favicon（由头像照片 avatar.jpg 生成，见下文）
 │   ├── manifest.json        # PWA 应用清单（构建后进入 public 根目录）
 │   ├── CNAME                # 自定义域名 777.hanphone.cn（构建后进入 public 根目录，勿删）
 │   ├── tags|categories|about/index.md  # 三个独立页面
@@ -62,8 +62,8 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 - 关键文件：
   - `hexo-offline.config.cjs`：workbox 配置（预缓存 glob、jsdelivr/unpkg/字体 CDN 运行时缓存、`skipWaiting` + `clientsClaim`）
   - `source/manifest.json`：应用清单（name/theme_color/start_url/icons），构建后落到 `public/` 根目录
-  - `source/img/pwa/`：图标由 `app-icon.svg`（全铺满渐变 + "七"字）生成，**不要用头像照片**（照片不适合做应用图标，且旧 `avatar.svg` 圆形有透明角也已被删除）
-- 换图标流程：改 `source/img/pwa/app-icon.svg`，用 sharp/ImageMagick 等重新导出各尺寸 PNG（icon-192/512、maskable-192/512、apple-touch-icon 180、favicon-16/32），保持 `manifest.json` 里路径不变。
+  - `source/img/pwa/`：图标由**头像照片**（`source/img/avatar.jpg`）生成（favicon-16/32、icon-192/512、maskable-192/512、apple-touch-icon 180），与头像取景一致
+- 换图标流程：重新裁好 `source/img/avatar.jpg`（400×400）后，用 sharp 从它导出各尺寸 PNG（512/192 建议 `png({palette:true, colours:256})` 压缩，否则照片 PNG 可达 450KB），覆盖 `source/img/pwa/` 下同名文件，保持 `manifest.json` 里路径不变。
 - 已验证：`pnpm run build` 后 `public/` 含 `service-worker.js`（预缓存全部静态资源，约 1.5MB）、`manifest.json`、图标，`index.html` 末尾注入 SW 注册脚本。
 - 注意：SW 注册脚本只在 `hexo generate` 阶段写入 `public/`，本地 `hexo server` 预览页不会显示（属正常，部署即生效）。PWA 需 HTTPS，线上已满足。
 

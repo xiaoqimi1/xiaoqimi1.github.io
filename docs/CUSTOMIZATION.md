@@ -39,6 +39,12 @@ url: https://xiaoqimi1.github.io  # 站点地址（勿改成 localhost）
 - 换头像：把新图放进 `source/img/`，改 `avatar.img` 路径（头像容器是 110px 圆形，`object-fit: cover`，竖版照片会被居中裁方）
 - 注意：照片主体不在画面中心时，需按主体位置重新裁切（可用 sharp 边缘方差定位主体）
 
+## 页面图标（favicon / PWA）
+
+- 浏览器标签页图标：`_config.butterfly.yml` 的 `favicon`（当前 `/img/pwa/favicon-32x32.png`）
+- PWA 应用图标（安装到桌面/主屏用）：`source/img/pwa/`（icon-192/512、maskable、apple-touch-icon），清单 `source/manifest.json`
+- 这些都从头像照片 `source/img/avatar.jpg` 导出，换图时用 sharp 重导各尺寸 PNG（512/192 用 `png({palette:true, colours:256})` 压缩，否则照片 PNG 会到 450KB），保持文件名和 `manifest.json` 路径不变
+
 ## 导航菜单
 
 `_config.butterfly.yml` 的 `menu`：
