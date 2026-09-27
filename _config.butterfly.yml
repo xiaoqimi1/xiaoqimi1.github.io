@@ -1080,9 +1080,36 @@ inject:
     - '  #rightside { right: 10px !important; opacity: 0.85 !important; transform: none !important; transition: opacity .3s; }'
     - '  #rightside:hover { opacity: 1 !important; }'
     - '  #rightside #rightside-config-hide { height: auto !important; opacity: 1 !important; transform: none !important; }'
+    - '  /* 首页卡片封面：图片保持自身比例、高度与卡片同高（contain）；留白处由 JS 铺模糊底图 */'
+    - '  .recent-post-item .post_cover { position: relative; overflow: hidden; background-color: #151719; isolation: isolate; }'
+    - '  .recent-post-item .post_cover .post-bg { position: relative !important; z-index: 1 !important; object-fit: contain !important; }'
+    - '  .recent-post-item .post_cover .cover-blur-bg { position: absolute; inset: -15px; z-index: 0; width: calc(100% + 30px); height: calc(100% + 30px); object-fit: cover; filter: blur(16px) brightness(0.68); transform: scale(1.02); pointer-events: none; }'
     - </style>
   bottom:
-    # - <script src="xxxx"></script>
+    - '<script>'
+    - '  (function () {'
+    - '    function fillCoverBlur () {'
+    - '      var covers = document.querySelectorAll("#recent-posts .post_cover");'
+    - '      covers.forEach(function (cover) {'
+    - '        if (cover.querySelector(".cover-blur-bg")) return;'
+    - '        var img = cover.querySelector(".post-bg");'
+    - '        if (!img) return;'
+    - '        var src = img.getAttribute("src");'
+    - '        if (!src) return;'
+    - '        var blur = document.createElement("img");'
+    - '        blur.className = "cover-blur-bg";'
+    - '        blur.src = src;'
+    - '        blur.alt = "";'
+    - '        cover.insertBefore(blur, cover.firstChild);'
+    - '      });'
+    - '    }'
+    - '    if (document.readyState === "loading") {'
+    - '      document.addEventListener("DOMContentLoaded", fillCoverBlur);'
+    - '    } else {'
+    - '      fillCoverBlur();'
+    - '    }'
+    - '  })();'
+    - '</script>'
 
 # CDN Settings
 # Don't modify the following settings unless you know how they work
