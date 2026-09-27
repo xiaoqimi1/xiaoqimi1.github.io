@@ -7,7 +7,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#ff7a8f",
   "theme_color": "#ff7a8f",
   "categories": ["blog", "personal"],
