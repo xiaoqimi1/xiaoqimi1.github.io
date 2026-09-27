@@ -27,10 +27,13 @@ xiaoqi-blog/
 ├── package.json             # 脚本: new/build/server/publish
 ├── pnpm-workspace.yaml      # allowBuilds（勿删）
 ├── hexo-offline.config.cjs  # PWA / Service Worker 缓存配置
+├── AGENTS.md                # 本文档
+├── docs/                    # 文档（WRITING.md 写作、CUSTOMIZATION.md 定制、XHS-SYNC.md 小红书同步经验）
 ├── .github/workflows/deploy.yml  # 构建并部署到 gh-pages 分支
 ├── source/
 │   ├── _posts/*.md          # 文章（Markdown，front-matter 含 title/date/tags/categories）
-│   ├── img/                 # 图片资源（background.jpg 是壁纸背景）
+│   ├── img/                 # 图片资源（background.jpg 是壁纸背景，avatar.jpg 是头像）
+│   ├── img/xhs/<note_id>/   # 小红书同步的笔记图片（文件名 NN.jpg 按序）
 │   ├── img/pwa/             # PWA 图标 + favicon（由头像照片 avatar.jpg 生成，见下文）
 │   ├── manifest.json        # PWA 应用清单（构建后进入 public 根目录）
 │   ├── CNAME                # 自定义域名 777.hanphone.cn（构建后进入 public 根目录，勿删）
@@ -49,6 +52,8 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 ```
 
 **发文章流程**：写 Markdown → `pnpm run publish`（或手动 `git add/commit/push`）→ GitHub Actions 构建 → 发布到线上，约 1 分钟。
+
+> 📌 同步小红书笔记成文章的完整流程与踩坑经验见 [`docs/XHS-SYNC.md`](docs/XHS-SYNC.md)。一句话版：登录态取自用户已登录 Chrome 导出的最新 cookie（存 `.xhs-cookies*`，gitignored）→ SSR 抓主页第一页 + 有头浏览器监听 `user_posted` 接口拿全部笔记（禁止自己直调 API，会触发风控）→ 逐篇抓详情 → 图片下载到 `source/img/xhs/<note_id>/` → `gen_markdown.py` 生成文章 → build → publish。
 
 ## 部署架构（重要）
 
