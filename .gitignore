@@ -11,3 +11,6 @@ db.json
 
 # 本地预览截图
 preview-shots/
+.xhs-cookies*
+.venv-xhs/
+xhs_tools/
