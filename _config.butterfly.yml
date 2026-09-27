@@ -290,7 +290,7 @@ aside:
     category: true
   card_author:
     enable: true
-    description: 热爱生活，记录美好
+    description: 爱玩洛克王国，bjd
     button:
       enable: false
       icon: fab fa-github
