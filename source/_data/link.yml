@@ -1,0 +1,15 @@
+- class_name: 友情链接
+  class_desc: 一些可爱的人儿，欢迎互换友链～
+  link_list:
+    - name: 小七的小红书
+      link: https://www.xiaohongshu.com/user/profile/649d592e0000000011000515
+      avatar: https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo319b5bfge5q005p4tb4n4818lrvpjbho
+      descr: 我的小红书主页，爱玩洛克王国和 bjd
+    - name: Hexo
+      link: https://hexo.io/
+      avatar: https://hexo.io/icon/favicon-196.png
+      descr: 快、简洁且高效的博客框架
+    - name: Butterfly 主题
+      link: https://butterfly.js.org/
+      avatar: https://butterfly.js.org/img/avatar.png
+      descr: 简洁美观的 Hexo 主题

@@ -22,6 +22,7 @@ menu:
   归档: /archives/ || fas fa-archive
   标签: /tags/ || fas fa-tags
   分类: /categories/ || fas fa-folder-open
+  友链: /link/ || fas fa-link
   关于: /about/ || fas fa-heart
 
 # --------------------------------------
@@ -48,6 +49,7 @@ code_blocks:
 #   icon: link || the description || color
 social:
   fab fa-github: https://github.com/xiaoqimi1 || Github || '#24292e'
+  fas fa-rss: /atom.xml || RSS || '#ff5722'
   # fas fa-envelope: mailto:xxxxxx@gmail.com || Email || '#4a7dbe'
 
 # --------------------------------------
