@@ -539,7 +539,7 @@ comments:
   # Leave it empty if you don't need comments
   # Choose: Disqus/Disqusjs/Livere/Gitalk/Valine/Waline/Utterances/Facebook Comments/Twikoo/Giscus/Remark42/Artalk
   # Format of two comments system : Disqus,Waline
-  use:
+  use: Giscus
   # Display the comment name next to the button
   text: true
   # Lazyload: The comment system will be load when comment element enters the browser's viewport.
@@ -636,12 +636,12 @@ twikoo:
 # Giscus
 # https://giscus.app/
 giscus:
-  repo:
-  repo_id:
-  category_id:
+  repo: xiaoqimi1/xiaoqimi1.github.io
+  repo_id: R_kgDOUiWk4Q
+  category_id: DIC_kwDOUiWk4c4DGjq2
   light_theme: light
   dark_theme: dark
-  js:
+  js: https://giscus.app/client.js
   option:
 
 # Remark42
@@ -897,7 +897,7 @@ fireworks:
 
 # Mouse click effects: Heart symbol
 click_heart:
-  enable: false
+  enable: true
   mobile: false
 
 # Mouse click effects: words
@@ -927,7 +927,7 @@ lightbox: medium_zoom
 
 # Series
 series:
-  enable: false
+  enable: true
   # Order by title or date
   orderBy: 'title'
   # Sort of order. 1, asc for ascending; -1, desc for descending
@@ -994,7 +994,7 @@ note:
 
 # https://github.com/MoOx/pjax
 pjax:
-  enable: false
+  enable: true
   # Exclude the specified pages from pjax, such as '/music/'
   exclude:
     # - /xxxxxx/
@@ -1116,13 +1116,13 @@ inject:
     - '      }, 300);'
     - '    });'
     - '    lazyObserver.observe(document.body, { childList: true, subtree: true });'
+    - '    function runAll () { fillCoverBlur(); lazyExtraImgs(); }'
     - '    if (document.readyState === "loading") {'
-    - '      document.addEventListener("DOMContentLoaded", fillCoverBlur);'
-    - '      document.addEventListener("DOMContentLoaded", lazyExtraImgs);'
+    - '      document.addEventListener("DOMContentLoaded", runAll);'
     - '    } else {'
-    - '      fillCoverBlur();'
-    - '      lazyExtraImgs();'
+    - '      runAll();'
     - '    }'
+    - '    document.addEventListener("pjax:complete", runAll);'
     - '  })();'
     - '</script>'
 
