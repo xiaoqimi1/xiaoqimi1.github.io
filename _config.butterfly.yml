@@ -272,7 +272,7 @@ footer:
   copyright:
     enable: false
     version: true
-  custom_text: 小七的小世界 · 用心记录每一天
+  custom_text: 小七的小世界 · 用心记录每一天 · <a href="/atom.xml" title="RSS 订阅"><i class="fas fa-rss" style="color:#ff5722"></i> RSS</a>
 
 # --------------------------------------
 # Aside Settings
