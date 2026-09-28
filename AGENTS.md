@@ -127,6 +127,34 @@ print('saved /tmp/opencode/attachment.'+ext)
 5. 本机 `hexo server` 会常驻后台，重建前先停掉（用端口 PID 精确 kill，别用 `pkill -f 'hexo server'`，会误杀执行命令的 shell）。
 6. token 轮换：更新 `.git-xiaoqi-credentials`（格式 `https://xiaoqimi1:<token>@github.com`）。
 
+## 2026-09-28 会话 · 经验沉淀
+
+本节记录本会话新增的定制与经验，便于后续维护/接手。
+
+### 外观与布局
+- **首页卡片图**：`#recent-posts .post_cover` 里 `.post-bg` 用 `object-fit: contain`（图片保持比例、高度=卡片同高），两侧留白由 JS 注入的同图模糊层 `.cover-blur-bg` 铺底（`blur(16px)+brightness(0.68)`），见 `inject.head` CSS 与 `inject.bottom` JS。仅作用于 `#recent-posts`，不影响文章页。
+- **主题色**：`theme_color.enable: true`，主色 `#64997b`（绿松石，与头像/背景一致），配套 `paginator/button_hover/link/scrollbar/blockquote` 等全部绿色系。改完主色后必须 `pnpm run clean && pnpm run build`，否则 stylus 缓存会残留旧色。
+- **背景加速**：`source/img/background.webp`（75KB，主）+ `background.jpg`（153KB，回退）。`inject` 里对 `#web_bg` 用 `image-set(url webp, url jpg)`，现代浏览器自动用 WebP，旧浏览器回退 JPEG。
+- **头像**：`avatar.img` 直接指向 QQ 开放头像 URL `https://q1.qlogo.cn/g?b=qq&nk=2556997014&s=640`（QQ 头像更新即同步）。PWA 图标仍由本地 `source/img/avatar.jpg` 生成，未动。
+- **PWA 图标**：重新生成时避免白边——`maskable` 图标应让内容铺满画布，勿用白底缩小居中；本项目头像背景色是 `(100,153,123)`，四角用此色。
+- **暗色模式**：`darkmode.enable: true` + `button: true` 本就开启，切换按钮在右侧栏 `#darkmode`（fa-adjust 图标）。注意右侧栏默认 `opacity:0` 需悬停页面右边缘才滑出（原生行为，勿强行改成常驻）。
+
+### 链接结构
+- **短链接**：`permalink: posts/:title/`，文章文件名用 7 位短 id（24 位 hex id 前 7 位，唯一）。旧长链接按用户要求不保留。
+- **友链**：`source/_data/link.yml` + `source/link/index.md`（`type: link`），菜单加 `/link/`。友链含小七自己 + 云林有风。
+- **RSS**：`hexo-generator-feed` 生成 `/atom.xml`（含最新 20 篇），页脚 `custom_text` 里加了 RSS 链接（fa-rss 图标），侧边栏 social 也有。
+
+### 功能开启（可选类，已收敛）
+- 开启：PJAX（局部刷新）、Series（文章系列，按主题给 41 篇打了系列）、canvas_nest 粒子背景、fireworks 点击烟花、translate 简繁切换、preloader 加载动画、structured_data（SEO）。
+- **收敛（调试中发现叠加会乱/卡，故关闭）**：canvas_ribbon/fluttering（背景彩带）、click_heart/clickShowText/activate_power_mode（点击增强，与烟花叠加过载）。教训：**多个全屏 canvas 特效勿同时开**，背景留一个粒子、点击留一个烟花最清爽。
+- **PJAX 兼容**：`inject.bottom` 的 blur/lazy JS 要监听 `pjax:complete` 事件重跑，否则页面切换后封面模糊层/懒加载失效。
+- **Giscus 评论**：需先在 `giscus.app` 手动授权安装到仓库（无法用 token 自动化）。配置在 `comments.use: Giscus` + `giscus` 节，`option` 里加 `data-lang: zh-CN` 使界面中文。
+
+### 其他经验
+- **功能全开前先评估叠加效果**：同一类功能（多个背景动画、多个点击特效）全开会互相干扰并拖慢性能，逐项开启并本地截图验证再发布。
+- **`public/` 旧目录残留**：改 permalink 后本地 `public/` 可能残留旧结构目录（已空），不影响线上；线上旧链接经实测已 404，用户若仍能打开是浏览器/PWA 缓存，硬刷新或清站点数据即可。
+- **Playwright 验证注意**：本地 `hexo server` 会缓存旧渲染，build 后需重启 server 再验证；`__INITIAL_STATE__` 解析、gallery JS 渲染等已在 XHS-SYNC.md 记录。
+
 ## 隐私 / 公开性
 
 - 仓库当前是**公开**的（GitHub Pages 用户站点免费版要求公开，设为私有会下线站点）。若后续要私有化，需要 GitHub Pro 套餐，且自定义域名配置不变。
