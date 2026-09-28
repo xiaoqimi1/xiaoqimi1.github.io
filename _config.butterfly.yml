@@ -371,7 +371,7 @@ rightside_bottom:
 
 # Conversion between Traditional and Simplified Chinese
 translate:
-  enable: false
+  enable: true
   # The text of a button
   default: 繁
   # the language of website (1 - Traditional Chinese/ 2 - Simplified Chinese）
@@ -805,7 +805,7 @@ mask:
 
 # Loading Animation
 preloader:
-  enable: false
+  enable: true
   # source
   # 1. fullpage-loading
   # 2. pace (progress bar)
@@ -865,9 +865,9 @@ activate_power_mode:
 canvas_ribbon:
   enable: false
   # The size of ribbon
-  size: 150
+  size: 110
   # The opacity of ribbon (0 ~ 1)
-  alpha: 0.6
+  alpha: 0.5
   zIndex: -1
   click_to_change: false
   mobile: false
@@ -880,11 +880,11 @@ canvas_fluttering_ribbon:
 # canvas_nest
 # https://github.com/hustcc/canvas-nest.js
 canvas_nest:
-  enable: false
+  enable: true
   # Color of lines, default: '0,0,0'; RGB values: (R,G,B).(note: use ',' to separate.)
-  color: '0,0,255'
+  color: '100,153,123'
   # The opacity of line (0~1)
-  opacity: 0.7
+  opacity: 0.6
   # The z-index property of the background
   zIndex: -1
   # The number of lines
@@ -893,24 +893,25 @@ canvas_nest:
 
 # Mouse click effects: fireworks
 fireworks:
-  enable: false
+  enable: true
   zIndex: 9999
   mobile: false
 
 # Mouse click effects: Heart symbol
 click_heart:
-  enable: true
+  enable: false
   mobile: false
 
 # Mouse click effects: words
 clickShowText:
   enable: false
   text:
-    # - I
-    # - LOVE
-    # - YOU
+    - 小确幸
+    - 可爱
+    - 萌
+    - 开心
   fontSize: 15px
-  random: false
+  random: true
   mobile: false
 
 # --------------------------------------
@@ -1054,10 +1055,12 @@ Open_Graph_meta:
 # Structured Data
 # https://developers.google.com/search/docs/guides/intro-structured-data
 structured_data:
-  enable: false
+  enable: true
   # Alternate name for the site, used in structured data
   # Format: ['name1', 'name2']
   alternate_name:
+    - 小七的博客
+    - 七七
 
 # Add the vendor prefixes to ensure compatibility
 css_prefix: true
