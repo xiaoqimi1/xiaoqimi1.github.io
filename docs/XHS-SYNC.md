@@ -1,6 +1,6 @@
 # 小红书笔记同步到博客 · 经验总结
 
-> 本文记录「把小七小红书主页公开笔记同步为 Hexo 博客文章」的完整流程与踩坑经验，供后续再次同步时参考。最后更新：2026-09-27（已成功同步 58 篇）。
+> 本文记录「把小七小红书主页公开笔记同步为 Hexo 博客文章」的完整流程与踩坑经验，供后续再次同步时参考。最后更新：2026-10-10（已同步 58 篇）。
 
 ## 一、目标与原理
 
@@ -91,3 +91,21 @@ pnpm run publish # git add -A + commit + push（自动用 .gitconfig-xiaoqi 小�
 1. 用户从 Chrome 导出最新 cookie → 存 `.xhs-cookies-raw.txt` → `build_cookie_json.py` 转 json。
 2. 跑 `fetch_profile_new.py` 拿 SSR 第一页 → 有头浏览器监听 `user_posted` 拿全部 id。
 3. 对比 `source/_posts/` 已有文章，只抓缺失的笔记详情 → 下载图片 → `gen_markdown.py` 生成 → build → publish。
+
+## 五、内容取舍规则（2026-10-10 定）
+
+- **出物 / 交易类笔记一律不同步，且已同步的要删除**：卖闲置、出娃/谷/卡、换物、拼团（含「自抱盒/成团」等团购协调）都算交易类，用户要求「有关于出物的全部删除」。
+- 判定看正文而非只看标题：命中 `出物/出闲置/可刀/包非偏/走平台/提确/平换/寄给你` 等交易话术的即交易类。
+- 同步后要**双向核对**笔记集合：`source/_posts/` 有、而 XHS 已没有的（用户自己删了）也要从博客删除（连同 `source/img/xhs/<note_id>/`）。
+- **拼团 ≠ 内容笔记**：如「推推不落幕幻梦集自抱盒团」这类团购帖，用户明确按交易类跳过。
+- 注意 `gen_markdown.py` 生成的文件名是**完整 24 位 note_id**，与仓库既有习惯（7 位短 id）不一致，生成后需手动重命名为 `id[:7].md`。
+
+### 本机快速核对命令
+```bash
+# SSR 首页（cookie 有效时）
+.venv-xhs/bin/python .venv-xhs/scripts/fetch_profile_new.py
+# 有头浏览器滚动拿全部 id（解析 snake_case: note_id/xsec_token/display_title）
+# 比对差集：NEW=博客缺、GONE=博客多（用户已从 XHS 删除）
+```
+
+> ⚠️ 本次踩坑：`fetch_profile.py` 的 `INITIAL_STATE` 正则新版本会截断，需改为「定位 `__INITIAL_STATE__=` 后 `json.JSONDecoder().raw_decode`，并先 replace `:undefined`→`:null`」。浏览器端 `JSON.stringify(window.__INITIAL_STATE__)` 会因循环引用报错，改为只提取 `user.notes` 的纯字段。
