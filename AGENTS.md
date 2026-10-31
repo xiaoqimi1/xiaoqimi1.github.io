@@ -53,7 +53,7 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 
 **发文章流程**：写 Markdown → `pnpm run publish`（或手动 `git add/commit/push`）→ GitHub Actions 构建 → 发布到线上，约 1 分钟。
 
-> 📌 同步小红书笔记成文章的完整流程与踩坑经验见 [`docs/XHS-SYNC.md`](docs/XHS-SYNC.md)。一句话版：登录态取自用户已登录 Chrome 导出的最新 cookie（存 `.xhs-cookies*`，gitignored）→ SSR 抓主页第一页 + 有头浏览器监听 `user_posted` 接口拿全部笔记（禁止自己直调 API，会触发风控）→ 逐篇抓详情 → 图片下载到 `source/img/xhs/<note_id>/` → `gen_markdown.py` 生成文章 → build → publish。
+> 📌 同步小红书笔记成文章的完整流程与踩坑经验见 [`docs/XHS-SYNC.md`](docs/XHS-SYNC.md)。一句话版：登录态直接解本机 Chrome cookie 库（`.venv-xhs/scripts/extract_cookies_from_chrome.py`）→ 主页 SSR 第一页拿新笔记 id/xsecToken → 逐篇详情 SSR → 图片下载到 `source/img/xhs/<note_id>/`（WebP 需转 JPEG）→ `gen_markdown.py` 生成文章（文件名改 7 位）→ build → publish。**绝对不要新开浏览器实例**（会被判定新设备、触发「登录设备超限」把用户踢下线），全程只用 requests + cookie。
 
 ## 部署架构（重要）
 

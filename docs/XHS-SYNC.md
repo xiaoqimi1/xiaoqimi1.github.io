@@ -1,6 +1,6 @@
 # 小红书笔记同步到博客 · 经验总结
 
-> 本文记录「把小七小红书主页公开笔记同步为 Hexo 博客文章」的完整流程与踩坑经验，供后续再次同步时参考。最后更新：2026-10-10（已同步 58 篇）。
+> 本文记录「把小七小红书主页公开笔记同步为 Hexo 博客文章」的完整流程与踩坑经验，供后续再次同步时参考。最后更新：2026-11-01（已同步 62 篇）。
 
 ## 一、目标与原理
 
@@ -15,27 +15,39 @@
 
 ### 1. 获取有效登录态
 
-会话 = 用户浏览器真实登录成功后导出的最新 cookie。web_session 绑定设备/指纹，**跨会话导出会失效**，所以：
-- 用户在已登录的 Chrome 打开 `https://www.xiaohongshu.com`，F12 → Application → Cookies → 复制 `Name=Value` 整段。
-- 保存为仓库根目录 `.xhs-cookies-raw.txt`（gitignored），用 `.venv-xhs/scripts/build_cookie_json.py` 转成 `.xhs-cookies.json`。
-- ⚠️ 每次会话只维持几小时到一天，失效后 SSR 会跳 `/website-login/captcha` 或 `/login`，需用户重新导出。
+会话 = 用户浏览器真实登录后的最新 cookie。web_session 绑定设备/指纹，**跨会话导出会失效**。
+
+**首选：直接从本机 Chrome 的 cookie 库读（2026-11 打通，无需用户手动导出）**
+- `.venv-xhs/scripts/extract_cookies_from_chrome.py`：复制 `~/.config/google-chrome/Default/Cookies` → 用 gnome-keyring 里 label 为 `Chrome Safe Storage` 的口令，`PBKDF2-SHA1(salt='saltysalt', iter=1, dkLen=16)` 派生 AES-128-CBC key、IV=16 个空格，解 `v10/v11` 密文；新版 Chrome 明文前有 32 字节 host_key 哈希，要剥掉。产物写 `.xhs-cookies-raw.txt` / `.xhs-cookies.json`（均 chmod 600、gitignored）。
+- 会话空闲很久后 cookie 只在用户**真正访问一次小红书**时才会刷新落盘，读出来若是失效的旧会话，让用户在 Chrome 打开/刷新一次主页再读即可。
+- 备选（Chrome 打不开时）：F12 → Application → Cookies → 复制 `Name=Value` 整段存 `.xhs-cookies-raw.txt`，跑 `build_cookie_json.py`。
+
+**⚠️ 绝对不要新开浏览器实例**（Playwright / 新 Chrome 窗口都算）：
+- 小红书会把它当成**新设备登录**，触发「电脑登录设备超限」，直接把正式会话踢下线——2026-11-01 就是踩了这个坑，登录态当场失效，只能请用户重新登录。
+- 同步全程只用「cookie + requests 纯 HTTP」：主页 SSR、详情 SSR、图片下载都够用，完全不需要浏览器。
+
+**登录态自检**（花的请求最少的一步）：
+- 用 cookie 请求主页 `/user/profile/{user_id}`，返回 302 → `/login` 即失效；200 且 HTML 里有昵称 → 有效。
+- 有效的标志还有一个：SSR 里 `user.notes[0]` 每项的 `id` / `noteCard.noteId` 是完整 24 位 id。**若 id、noteId 全是空字符串，就是被降级（未登录/会话不可信），只能拿到标题和时间**，别拿它继续往下跑。
 
 ### 2. 抓取全部笔记 id + xsecToken
 
-**阶段 A：主页 SSR（第一页约 31 篇）**
+**阶段 A：主页 SSR（第一页 30 篇，覆盖约半年）**
 ```python
 # requests + cookie GET https://www.xiaohongshu.com/user/profile/{user_id}
 # 解析 window.__INITIAL_STATE__（注意：先把 :undefined 变 :null，new Map/Set(...) 变 null）
 # user.notes[0] 数组即最新笔记卡，含 id/xsecToken/displayTitle/time
 ```
 
-**阶段 B：翻页（剩余笔记）**
-- SSR **不接受** cursor/page 参数翻页。
-- 有头浏览器（Playwright `channel=chrome`，真实 Chrome 指纹）打开主页，滚动触发页面自身调用 `/api/sns/web/v1/user_posted`，**监听 response 捕获**。
-- ⚠️ 响应字段是 `note_id`/`xsec_token`/`display_title`/`time`（不是 `id`/`xsecToken`）。
-- ⚠️ 不要自己用 xhshow 直调 API：极易触发风控（406 → 461 登录过期 → 300011 账号异常），代价是账号被标记需要冷却数小时~1天。**让浏览器页面自己签名最安全**。
+**增量同步时阶段 A 就够了**：第一页按时间倒序排 30 篇，通常已经覆盖上次同步之后的全部新增。跑完先比对 `source/_posts/`（文件名是 id 前 7 位），只要「新增」那几篇都落在这一页里、最老一篇博客里已有，就可以跳过阶段 B。
 
-生产脚本：`.venv-xhs/scripts/fetch_profile_new.py`（SSR）+ 有头浏览器监听 API。
+**阶段 B：翻页（补历史 / 需要全量时）**
+- SSR **不接受** cursor/page 参数翻页。
+- 只能靠浏览器滚动触发页面自身调用 `/api/sns/web/v1/user_posted` 再监听 response——但这会新开浏览器实例，**会触发设备上限踢号**（见第 1 节），除非用户明确同意，否则不要做。
+- ⚠️ 响应字段是 `note_id`/`xsec_token`/`display_title`/`time`（不是 `id`/`xsecToken`）。
+- ⚠️ 不要自己用 xhshow 直调 API：极易触发风控（406 → 461 登录过期 → 300011 账号异常），代价是账号被标记需要冷却数小时~1天。
+
+生产脚本：`.venv-xhs/scripts/fetch_profile_new.py`（SSR）+ `fetch_new_details_2026_11.py`（只抓新增笔记详情）。
 
 ### 3. 逐篇抓详情
 
@@ -43,6 +55,9 @@
 # GET https://www.xiaohongshu.com/explore/{note_id}?xsec_token={tok}&xsec_source=pc_user
 # 解析 __INITIAL_STATE__ → noteDetailMap → {note_id: {note: {desc, imageList, time, interactInfo, type}}}
 ```
+- ⚠️ 详情页 SSR 里会出现 `new Map([])` 等 JS 字面量，解析前必须
+  `re.sub(r"new (Map|Set|Date|WeakMap|WeakSet|Uint8Array|Array)\([^()]*\)", "null", s)`，
+  否则 `raw_decode` 直接报 `Expecting value`（主页 SSR 一般不需要，详情页需要）。
 - `desc` = 正文（含 `#话题[话题]#` 标记，生成文章时清理）
 - `imageList[]` = 图片列表（`urlDefault` 或 `infoList[].url`）
 - `video` = 视频笔记（取 `desc` 与封面即可）
@@ -54,6 +69,12 @@
 ### 4. 下载图片
 
 xhscdn 图片带 `Referer: https://www.xiaohongshu.com/` 即可下载（HTTP 200）。存 `source/img/xhs/<note_id>/NN.jpg`（按图序 01/02/...）。
+
+- ⚠️ 现在 xhscdn 默认回 **WebP**，但文件按 `.jpg` 命名保存，`file` 一看就是 `RIFF ... Web/P`。仓库里历史图片是真 JPEG，为保持一致（也避免个别环境/缓存按扩展名判断类型），下完用 Pillow 转一次：
+  ```python
+  from PIL import Image
+  im = Image.open(p); im.convert("RGB").save(p, "JPEG", quality=88, optimize=True)
+  ```
 
 生产脚本：`.venv-xhs/scripts/download_images.py`。
 
@@ -80,17 +101,18 @@ pnpm run publish # git add -A + commit + push（自动用 .gitconfig-xiaoqi 小�
 
 1. **不要在本机反复直调 API**：签名直调极易触发风控，后果是账号被标记（需冷却），严重时影响用户正常使用。用「有头浏览器 + 页面自身签名」。
 2. **headless 必被拦**：Playwright 请用 `channel="chrome"` 有头 + 真实系统 Chrome；注入 cookie 时 headless 页面打不开 xhs（风控）。
-3. **cookie 有效期短**：依赖用户浏览器实时导出。捉到先验证（主页 SSR 含「柒柒 - 小红书」标题 + 笔记卡）再批量。
-4. **v11 加密 cookie**：不能直接读 Chrome 数据库解密（app-bound encryption），复制 profile 会被 Chrome 重置；唯一可靠路径 = 用户浏览器 DevTools 导出。
-5. **不要开独立的有头浏览器窗口让用户扫二维码**：用户远程看不到该窗口；结论是直接用用户浏览器里已登录的会话。
+3. **cookie 有效期短**：依赖用户浏览器实时访问刷新。读出来先验证（主页 SSR 含「柒柒 - 小红书」标题 + 笔记卡 + 非空 24 位 id）再批量。
+4. **v11 加密 cookie 在本机是可解的**（2026-11-01 验证）：Chrome Linux 用 gnome-keyring 的 `Chrome Safe Storage` 作口令，详见 `.venv-xhs/scripts/extract_cookies_from_chrome.py`。不需要 DevTools 手动导出。
+5. **绝对不要新开浏览器（Playwright / 新 Chrome 窗口 / 新 profile）**：小红书判定为「新设备登录」，触发「电脑登录设备超限」，会把用户正式会话踢下线，同步立刻断。2026-11-01 踩过一次，代价是请用户重新登录。全程只用 requests + cookie。
 6. **SSR 的 `__INITIAL_STATE__`** 是 JS 对象不是纯 JSON：需 `:undefined→:null`、`new Map(...)/new Set(...)→null` 才能 `json.loads`。
 7. **图片 URL 带有效期**：xhscdn URL 有时间戳路径分段，尽快下载。
+8. **SSR 里 id 为空 = 会话被降级**：主页 SSR 每项 `id`/`noteCard.noteId` 都为空字符串时，说明服务端没把你当登录用户（登录态失效或指纹不匹配），此时只能拿到标题和时间，必须先解决登录态。
 
 ## 四、后续再次同步时的快速路线
 
-1. 用户从 Chrome 导出最新 cookie → 存 `.xhs-cookies-raw.txt` → `build_cookie_json.py` 转 json。
-2. 跑 `fetch_profile_new.py` 拿 SSR 第一页 → 有头浏览器监听 `user_posted` 拿全部 id。
-3. 对比 `source/_posts/` 已有文章，只抓缺失的笔记详情 → 下载图片 → `gen_markdown.py` 生成 → build → publish。
+1. `.venv-xhs/bin/python .venv-xhs/scripts/extract_cookies_from_chrome.py`（前提：用户在 Chrome 里登录着小红书，且最近访问过一次让 cookie 落盘）。
+2. `fetch_profile_new.py` 拿 SSR 第一页 → 与 `source/_posts/` 的 7 位 id 比对，得到新增列表。
+3. `fetch_new_details_2026_11.py` 只抓新增笔记详情（顺带按交易类关键词跳过）→ `download_images.py`（之后 WebP→JPEG）→ `gen_markdown.py` → 把 24 位文件名改成 `id[:7].md` → `pnpm run clean && pnpm run build` → build 无 ERROR 后 commit + push。
 
 ## 五、内容取舍规则（2026-10-10 定）
 
@@ -102,9 +124,10 @@ pnpm run publish # git add -A + commit + push（自动用 .gitconfig-xiaoqi 小�
 
 ### 本机快速核对命令
 ```bash
-# SSR 首页（cookie 有效时）
+# 读 Chrome 登录态（不开浏览器）
+.venv-xhs/bin/python .venv-xhs/scripts/extract_cookies_from_chrome.py
+# SSR 首页第一页（cookie 有效时）
 .venv-xhs/bin/python .venv-xhs/scripts/fetch_profile_new.py
-# 有头浏览器滚动拿全部 id（解析 snake_case: note_id/xsec_token/display_title）
 # 比对差集：NEW=博客缺、GONE=博客多（用户已从 XHS 删除）
 ```
 
