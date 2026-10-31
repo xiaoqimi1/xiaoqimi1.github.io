@@ -34,7 +34,7 @@ python3 -m venv .venv-xhs --system-site-packages   # 需要能 import gi（读 k
 
 ```bash
 PY=.venv-xhs/bin/python
-S=.opencode/skills/xhs-sync/scripts/xhs_sync.py
+S=.agents/skills/xhs-sync/scripts/xhs_sync.py
 
 $PY $S cookies      # 1. 从 Chrome cookie 库解出登录态 → .xhs-cookies.json
 $PY $S list         # 2. 主页 SSR 第一页 + 与 source/_posts 比对，标出新增/交易类

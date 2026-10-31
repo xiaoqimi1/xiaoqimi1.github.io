@@ -15,7 +15,7 @@
   .venv-xhs/bin/pip install requests pillow cryptography
 
 用法示例：
-  .venv-xhs/bin/python .opencode/skills/xhs-sync/scripts/xhs_sync.py all
+  .venv-xhs/bin/python .agents/skills/xhs-sync/scripts/xhs_sync.py all
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ from pathlib import Path
 
 # --- 路径 -------------------------------------------------------------------
 HERE = Path(__file__).resolve()
-ROOT = HERE.parents[4]                      # <repo>/  （scripts/xhs-sync/skills/.opencode）
+ROOT = HERE.parents[4]                      # <repo>/  （scripts/xhs-sync/skills/.agents）
 POSTS = ROOT / "source" / "_posts"
 IMG_XHS = ROOT / "source" / "img" / "xhs"
 WORK = Path("/tmp/opencode/xhs")            # 抓取中间产物

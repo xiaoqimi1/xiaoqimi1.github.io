@@ -28,7 +28,7 @@ xiaoqi-blog/
 ├── pnpm-workspace.yaml      # allowBuilds（勿删）
 ├── hexo-offline.config.cjs  # PWA / Service Worker 缓存配置
 ├── AGENTS.md                # 本文档
-├── .opencode/skills/        # 经验沉淀（xhs-sync 小红书同步 / blog-site 博客维护），细节都在 SKILL.md
+├── .agents/skills/          # 经验沉淀（xhs-sync 小红书同步 / blog-site 博客维护），细节都在 SKILL.md
 ├── .github/workflows/deploy.yml  # 构建并部署到 gh-pages 分支
 ├── source/
 │   ├── _posts/*.md          # 文章（Markdown，front-matter 含 title/date/tags/categories）
@@ -53,7 +53,7 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 
 **发文章流程**：写 Markdown → `pnpm run publish`（或手动 `git add/commit/push`）→ GitHub Actions 构建 → 发布到线上，约 1 分钟。
 
-> 📌 小红书同步与博客维护的完整经验都在 skill 里：`.opencode/skills/xhs-sync/SKILL.md`（同步小红书笔记）、`.opencode/skills/blog-site/SKILL.md`（写文/定制/发布/踩坑）。同步一句话版：解本机 Chrome cookie 库拿登录态 → 主页 SSR 第一页比对新增 → 详情 SSR → 下图片（WebP 转 JPEG）→ 生成文章（文件名 7 位）→ build → push。**绝对不要新开浏览器实例**（会被判新设备、触发「登录设备超限」把用户踢下线），全程只用 requests + cookie。命令：`.venv-xhs/bin/python .opencode/skills/xhs-sync/scripts/xhs_sync.py all`。
+> 📌 小红书同步与博客维护的完整经验都在 skill 里：`.agents/skills/xhs-sync/SKILL.md`（同步小红书笔记）、`.agents/skills/blog-site/SKILL.md`（写文/定制/发布/踩坑）。同步一句话版：解本机 Chrome cookie 库拿登录态 → 主页 SSR 第一页比对新增 → 详情 SSR → 下图片（WebP 转 JPEG）→ 生成文章（文件名 7 位）→ build → push。**绝对不要新开浏览器实例**（会被判新设备、触发「登录设备超限」把用户踢下线），全程只用 requests + cookie。命令：`.venv-xhs/bin/python .agents/skills/xhs-sync/scripts/xhs_sync.py all`。
 
 ## 部署架构（重要）
 
@@ -131,9 +131,9 @@ print('saved /tmp/opencode/attachment.'+ext)
 
 外观定制、功能开关、踩坑细节都已沉淀到 skill，不再散落在文档里：
 
-- `.opencode/skills/blog-site/SKILL.md`：写文章、主题定制（背景/头像/PWA/主题色/导航）、
+- `.agents/skills/blog-site/SKILL.md`：写文章、主题定制（背景/头像/PWA/主题色/导航）、
   已开启与已收敛的功能清单、发布流程与已知坑。
-- `.opencode/skills/xhs-sync/SKILL.md`：小红书同步全流程（含登录态获取、风控红线、解析坑）。
+- `.agents/skills/xhs-sync/SKILL.md`：小红书同步全流程（含登录态获取、风控红线、解析坑）。
 
 会话里遇到新坑，更新对应 SKILL.md，别再新开文档。
 
