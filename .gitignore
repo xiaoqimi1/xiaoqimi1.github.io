@@ -14,3 +14,6 @@ preview-shots/
 .xhs-cookies*
 .venv-xhs/
 xhs_tools/
+
+# Python 缓存
+__pycache__/
