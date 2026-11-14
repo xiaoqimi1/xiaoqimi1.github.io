@@ -556,6 +556,44 @@ def cmd_markdown(_args) -> None:
     log(f"生成 {len(written)} 篇文章")
 
 
+# --- 6. 自检 ---------------------------------------------------------------
+def probe_kind(path: Path) -> str:
+    with open(path, "rb") as f:
+        head = f.read(16)
+    if head[:3] == b"\xff\xd8\xff":
+        return "jpeg"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "webp"
+    if head[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    return head[:4].hex() or "empty"
+
+
+def cmd_check(_args) -> None:
+    """资产自检：.jpg 必须是真 JPEG；视频目录要有 mp4 且文章里引用了它。"""
+    bad = []
+    for p in sorted(IMG_XHS.rglob("*.jpg")):
+        kind = probe_kind(p)
+        if kind != "jpeg":
+            bad.append((p, kind))
+    vdirs = sorted({p.parent for p in IMG_XHS.rglob("video.mp4")})
+    orphan = []
+    for d in vdirs:
+        post = POSTS / f"{d.name[:7]}.md"
+        if not post.exists() or "video.mp4" not in post.read_text():
+            orphan.append(d.name)
+
+    log(f"图片 {len(list(IMG_XHS.rglob('*.jpg')))} 张，格式异常 {len(bad)} 张")
+    for p, kind in bad:
+        log(f"  !! {p} 实际是 {kind}（需要 Pillow 转真 JPEG）")
+    log(f"视频 {len(vdirs)} 条，文章未引用 {len(orphan)} 条")
+    for nid in orphan:
+        log(f"  !! {nid} 有 video.mp4 但 source/_posts/{nid[:7]}.md 没引用")
+    if bad or orphan:
+        raise SystemExit("自检未通过")
+    log("自检通过")
+
+
 # --- 编排 -------------------------------------------------------------------
 def cmd_all(args) -> None:
     cmd_cookies(args)
@@ -564,6 +602,7 @@ def cmd_all(args) -> None:
     cmd_images(args)
     cmd_videos(args)
     cmd_markdown(args)
+    cmd_check(args)
     log("\n下一步：pnpm run clean && pnpm run build 确认无 ERROR，再 commit + push。")
 
 
@@ -580,12 +619,13 @@ def main() -> None:
     p = sub.add_parser("videos", help="下载视频笔记的 mp4（h264 优先）")
     p.add_argument("--ids", nargs="*", help="只处理这些完整 note_id")
     sub.add_parser("markdown", help="生成 Hexo 文章")
+    sub.add_parser("check", help="资产自检：图片都是真 JPEG、视频都被文章引用")
     sub.add_parser("all", help="cookies→list→fetch→images→videos→markdown")
     args = ap.parse_args()
     os.makedirs(WORK, exist_ok=True)
     {"cookies": cmd_cookies, "list": cmd_list, "fetch": cmd_fetch,
      "images": cmd_images, "videos": cmd_videos, "markdown": cmd_markdown,
-     "all": cmd_all}[args.cmd](args)
+     "check": cmd_check, "all": cmd_all}[args.cmd](args)
 
 
 if __name__ == "__main__":

@@ -126,6 +126,8 @@ print('saved /tmp/opencode/attachment.'+ext)
 4. 修改主题时优先用 `inject.head` 注入 CSS，尽量不改 `themes/butterfly/` 源码，便于升级。
 5. 本机 `hexo server` 会常驻后台，重建前先停掉（用端口 PID 精确 kill，别用 `pkill -f 'hexo server'`，会误杀执行命令的 shell）。
 6. token 轮换：更新 `.git-xiaoqi-credentials`（格式 `https://xiaoqimi1:<token>@github.com`）。
+7. **小红书图片一律真 JPEG**：xhscdn 下发的是 WebP，按 `.jpg` 存会得到「jpg 皮 webp 芯」。同步脚本用 Pillow 转真 JPEG，`python .agents/skills/xhs-sync/scripts/xhs_sync.py check` 可校验（当前 191 张全为真 JPEG）。
+8. **视频笔记要单独下载**：视频只在 `video.media.stream` 里，`imageList` 只有封面；直链 `sns-video-v2.xhscdn.com` 一律 403，须走 `backupUrls` 的 `sns-bak-v*.xhscdn.com`（仅 http）。细节见 `xhs-sync/SKILL.md` 的 `videos` 一节。
 
 ## 经验沉淀（skill）
 
