@@ -43,6 +43,7 @@ POSTS = ROOT / "source" / "_posts"
 IMG_XHS = ROOT / "source" / "img" / "xhs"
 WORK = Path("/tmp/opencode/xhs")            # 抓取中间产物
 COOKIE_JSON = ROOT / ".xhs-cookies.json"
+TOKENS_JSON = ROOT / ".xhs-tokens.json"   # 从浏览器缓存捞出的 note_id→xsec_token
 COOKIE_RAW = ROOT / ".xhs-cookies-raw.txt"
 CHROME_COOKIES = Path.home() / ".config/google-chrome/Default/Cookies"
 
@@ -254,6 +255,80 @@ def cmd_list(_args) -> None:
             "（无法翻页，需另想办法）。")
 
 
+# --- 2b. tokens：从本机 Chrome 磁盘缓存捞 note_id + xsec_token ----------------
+CACHE_DIRS = (
+    Path.home() / ".cache/google-chrome/Default/Cache/Cache_Data",
+    Path.home() / ".config/google-chrome/Default/Cache/Cache_Data",
+)
+
+
+def _inflate_bodies(blob: bytes) -> list[bytes]:
+    """Chrome simple cache 条目里 HTTP body 是 gzip/zlib 流，靠魔数定位解压。"""
+    import zlib
+
+    out, i = [], 0
+    while True:
+        k = blob.find(b"\x1f\x8b\x08", i)
+        if k < 0:
+            return out
+        for wbits in (31, 15):
+            try:
+                out.append(zlib.decompress(blob[k:], wbits))
+                i = k + 3
+                break
+            except Exception:
+                continue
+        else:
+            i = k + 3
+
+
+def scan_cache_tokens() -> dict[str, dict]:
+    """扫 Chrome 磁盘缓存里 `user_posted` 接口的响应（浏览器自己签名的请求），
+    得到翻页过的笔记 id + xsec_token。不发起任何请求，也不新开浏览器。"""
+    notes: dict[str, dict] = {}
+    for d in CACHE_DIRS:
+        if not d.is_dir():
+            continue
+        for p in d.iterdir():
+            if not p.is_file() or p.stat().st_size > 4 * 1024 * 1024:
+                continue
+            blob = p.read_bytes()
+            if b"user_posted" not in blob or USER_ID.encode() not in blob:
+                continue
+            for body in _inflate_bodies(blob):
+                if b'"notes"' not in body:
+                    continue
+                try:
+                    j = json.loads(body)
+                except Exception:
+                    continue
+                for it in ((j.get("data") or {}).get("notes") or []):
+                    nid, tok = it.get("note_id"), it.get("xsec_token")
+                    if not (nid and tok):
+                        continue
+                    card = it.get("note_card") or {}
+                    notes[nid] = {"tok": tok, "title": card.get("display_title"),
+                                  "type": card.get("type"), "time": it.get("time")}
+    return notes
+
+
+def cmd_tokens(_args) -> None:
+    import datetime
+
+    notes = scan_cache_tokens()
+    if not notes:
+        raise SystemExit("缓存里没有 user_posted 响应：先在 Chrome 里打开并滚动一次小红书主页")
+    TOKENS_JSON.write_text(json.dumps(notes, ensure_ascii=False, indent=1))
+    TOKENS_JSON.chmod(0o600)
+    ts = [v["time"] for v in notes.values() if v.get("time")]
+    span = ""
+    if ts:
+        def f(t):
+            return datetime.datetime.fromtimestamp(t / 1000).strftime("%Y-%m-%d")
+        span = f"（{f(min(ts))} → {f(max(ts))}）"
+    log(f"从 Chrome 缓存捞出 {len(notes)} 条笔记的 xsec_token{span} → {TOKENS_JSON.name}")
+
+
 # --- 3. 抓详情 ---------------------------------------------------------------
 def extract_note(st: dict) -> dict | None:
     acc: list = []
@@ -281,8 +356,19 @@ def cmd_fetch(args) -> None:
 
     WORK.mkdir(parents=True, exist_ok=True)
     notes = json.load(open(WORK / "notes.json")) if (WORK / "notes.json").exists() else fetch_profile()
+    extra = getattr(args, "tokens", None)
+    if extra:                                    # 历史笔记：id→token 来自浏览器缓存
+        pool = json.load(open(extra))
+        known = {n["id"] for n in notes}
+        for nid, meta in pool.items():
+            if nid not in known:
+                notes.append({"id": nid, "xsecToken": meta["tok"],
+                              "displayTitle": meta.get("title") or "",
+                              "time": meta.get("time"), "type": meta.get("type")})
     have = existing_ids()
     force = set(getattr(args, "ids", None) or [])       # 强制重抓（如给老视频笔记补视频）
+    if getattr(args, "tokens", None):                   # 明确给了 token 池 → 全部重抓
+        force |= set(json.load(open(args.tokens)))
     todo, skipped = [], []
     for n in notes:
         if n["id"][:7] in have and n["id"] not in force:
@@ -311,7 +397,10 @@ def cmd_fetch(args) -> None:
             log("    !! 解析不到 noteDetailMap")
             continue
         (WORK / f"detail_{nid}.json").write_text(json.dumps(
-            {"id": nid, "xsecToken": tok, "raw": note}, ensure_ascii=False))
+            {"id": nid, "xsecToken": tok,
+             "meta": {"displayTitle": n.get("displayTitle") or "",
+                      "time": n.get("time"), "type": n.get("type")},
+             "raw": note}, ensure_ascii=False))
         log(f"    OK imgs={len(note.get('imageList') or [])} type={note.get('type')} "
             f"title={note.get('title')!r}")
         ok += 1
@@ -353,6 +442,8 @@ def cmd_images(args) -> None:
             continue
         n_dir = IMG_XHS / nid
         n_dir.mkdir(parents=True, exist_ok=True)
+        for old in list(n_dir.glob("*.webp")) + list(n_dir.glob("*.jpg")):
+            old.unlink()                          # 重抓时清掉旧图，避免张数对不上
         for idx, img in enumerate(imgs, 1):
             url = pick_url(img)
             if not url:
@@ -505,6 +596,9 @@ def cmd_markdown(_args) -> None:
         title = clean_desc(raw.get("title") or "")
         if not title:
             title = clean_desc((raw.get("noteCard") or {}).get("displayTitle") or "")
+        if not title:                       # 主页/缓存里的卡片标题（详情常为空）
+            title = clean_desc(((json.load(open(f)).get("meta") or {})
+                                .get("displayTitle")) or "")
         if not title:
             title = clean_desc(desc)[:20] or f"小红书笔记 {nid[:8]}"
         title = re.sub(r"[：:]\s*$", "", title).strip()
@@ -629,9 +723,11 @@ def main() -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("cookies", help="从 Chrome cookie 库解出登录态")
     sub.add_parser("list", help="列出 SSR 第一页并与博客比对")
+    sub.add_parser("tokens", help="从 Chrome 缓存捞 note_id + xsec_token（历史笔记用）")
     p = sub.add_parser("fetch", help="抓新增笔记详情")
     p.add_argument("--include-trade", action="store_true", help="连交易/出物类也抓（默认跳过）")
     p.add_argument("--ids", nargs="*", help="强制重抓这些完整 note_id（如给已同步的视频笔记补视频）")
+    p.add_argument("--tokens", help="额外按 .xhs-tokens.json 里的 id→token 抓历史笔记")
     p = sub.add_parser("images", help="下载图片")
     p.add_argument("--ids", nargs="*", help="只处理这些完整 note_id")
     p = sub.add_parser("videos", help="下载视频笔记的 mp4（h264 优先）")
@@ -642,7 +738,7 @@ def main() -> None:
     args = ap.parse_args()
     os.makedirs(WORK, exist_ok=True)
     {"cookies": cmd_cookies, "list": cmd_list, "fetch": cmd_fetch,
-     "images": cmd_images, "videos": cmd_videos, "markdown": cmd_markdown,
+     "tokens": cmd_tokens, "images": cmd_images, "videos": cmd_videos, "markdown": cmd_markdown,
      "check": cmd_check, "all": cmd_all}[args.cmd](args)
 
 

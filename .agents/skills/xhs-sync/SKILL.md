@@ -38,7 +38,9 @@ S=.agents/skills/xhs-sync/scripts/xhs_sync.py
 
 $PY $S cookies      # 1. 从 Chrome cookie 库解出登录态 → .xhs-cookies.json
 $PY $S list         # 2. 主页 SSR 第一页 + 与 source/_posts 比对，标出新增/交易类
+$PY $S tokens       # 2b. 从本机 Chrome 缓存捞历史笔记的 id+xsec_token（可选）
 $PY $S fetch        # 3. 抓新增笔记详情 → /tmp/opencode/xhs/detail_*.json
+                    #    历史笔记：fetch --tokens .xhs-tokens.json（全量重抓）
 $PY $S images       # 4. 下图片 → source/img/xhs/<note_id>/NN.webp（统一 WebP）
 $PY $S videos       # 4b. 视频笔记下 mp4 → source/img/xhs/<note_id>/video.mp4（h264 优先）
 $PY $S markdown     # 5. 生成文章 → source/_posts/<id 前 7 位>.md
@@ -73,6 +75,30 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
   SSR 不接受 cursor/page 翻页；要更早的历史只能靠浏览器滚动拦 `user_posted` 接口，
   而那违反铁律 1，除非用户明确授权，否则不要做（也接受「老笔记是否被删」无法全量核对）。
 
+### 2b. `tokens` — 历史笔记的 xsec_token（不开浏览器）
+
+**先搞清 token 是什么**：`xsec_token` 不是 cookie，是**单篇笔记**的访问凭证。
+cookie 只有登录态（`web_session` / `id_token` / `a1` 等 16 个），主页 SSR 返回 200 且带昵称
+就说明登录完全正常；但 `/explore/<id>` 不带 token 一律 302 到 `/404/sec_xxx`
+（实测裸链接、`/discovery/item/`、`?xsec_source=pc_share` 全是 302）。
+所以「没退出登录却没有 token」是正常现象，不是登录失效。
+
+token 只由 `user_posted` 翻页接口下发，主页 SSR 只给第一页 30 条；直接调该接口要签名，
+违反铁律 2。**替代方案：从本机 Chrome 磁盘缓存里捞**——浏览器自己签名的响应会落盘。
+
+```bash
+$PY $S tokens      # 扫 ~/.cache/google-chrome/Default/Cache，解析 user_posted 的 JSON
+```
+
+- 产物 `.xhs-tokens.json`（`chmod 600`，已 gitignore）：`{note_id: {tok,title,type,time}}`。
+- 缓存条目是 Chrome simple cache 格式：头部 `\0` 分隔，body 是 gzip/zlib 流，
+  靠魔数 `1f 8b 08` 定位后 `zlib.decompress(..., 31)`；直接 `gzip.GzipFile` 会报错。
+- 只有「在过去某次滚动中加载过」的页才在缓存里。想覆盖更早历史：让用户自己在
+  Chrome 里打开主页滚到底（同设备同 profile，**不要**用 Playwright 新开浏览器），
+  然后重跑 `tokens`。
+- 实测 2026-11-14：缓存捞到 56 条（2024-12-01 → 2026-09-27），加上首页第一页 30 条
+  共覆盖博客 64 篇里的 62 篇；剩下 2 篇在所有缓存页里都不存在（多半已被用户删除）。
+
 ### 3. `fetch` — 详情
 - `GET /explore/{id}?xsec_token={tok}&xsec_source=pc_user`。
 - ⚠️ 详情页 SSR 里有 `new Map([])` 之类 JS 字面量，解析前必须把
@@ -83,6 +109,8 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
 - 视频笔记 `imageList` 只有封面，真正的视频在 `video.media.stream`；必须跑 `videos` 步骤。
 - 给**已同步过**的老笔记补抓（如补视频）：`fetch --ids <完整24位id> …` 会强制重抓，
   之后 `videos --ids …` + `markdown` 重生成同名文章。
+- 全量历史重抓：`fetch --tokens .xhs-tokens.json`（池里的 id 一律重抓，不受「已有文章跳过」影响），
+  接着 `images --ids <池里所有 id>` → `videos` → `markdown`。重抓前 `images` 会先清空该篇旧图。
 - ⚠️ 老笔记（不在第一页）没有 `xsec_token`，`/explore/{id}` 会 302，抓不到，只能放弃。
 
 ### 4. `images` — 图片
@@ -96,6 +124,8 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
 - xhscdn 原本就回 WebP → 直接落盘，别转来转去；换来的是零重编码损失。
 - 引用一律按**磁盘实际文件名**生成（`.webp`），cover / gallery / video poster 三处都要跟上；
   老文章迁移后要同步改 md 里的 `/img/xhs/<id>/NN.jpg` → `.webp`。
+- 历史图若当年被转过 JPEG，可以用 `fetch --tokens` + `images --ids` 重抓原图：
+  xhscdn 给的就是 WebP，原样落盘即**零重编码**（重抓前脚本会先清空该篇旧图）。
 - 校验魔数（不要只信扩展名）：WebP 头 `RIFF....WEBP`。`check` 会同时报「格式异常」
   和「遗留 .jpg」，两者都必须是 0。
 
@@ -104,7 +134,8 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
   `EF5`=h265/hevc（Firefox、部分安卓播不了，别当默认）。
 - ⚠️ `sns-video-v2.xhscdn.com` 的 masterUrl 一律 **403**；要改用 `backupUrls` 里的
   `sns-bak-v*.xhscdn.com`（**只走 http**），带 `Referer` 才能拿到 mp4。
-- 存 `source/img/xhs/<id>/video.mp4`；实测 15 秒左右的视频 h264 约 1–6MB。
+- 存 `source/img/xhs/<id>/video.mp4`；实测 15 秒左右的视频 h264 约 1–6MB，
+  长的录屏能到几十 MB（2026-11 有条 4 分 24 秒的 95MB），用户要求原样保留、不转码。
 - mp4 不在 `hexo-offline.config.cjs` 的预缓存 glob 里，不会被塞进 Service Worker，按需加载。
 
 ### 5. `markdown` — 文章
@@ -117,6 +148,10 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
 - ⚠️ `description` / `title` 必须清掉 `@ [ ]` 等 YAML 构造字符，否则 Hexo 报 `Process failed`。
 - 纯话题笔记（desc 只有 `#xxx[话题]#`）要兜底标题，正文只剩画廊也正常。
 - 文件名 = `id` 前 7 位（`<七位>.md`），图片目录用完整 24 位 id——两者不要搞反。
+- ⚠️ 详情 SSR 的 `title` 经常为空（纯话题笔记），标题必须能兜底到卡片标题：
+  `fetch` 会把主页/缓存卡片的 `displayTitle` 写进 detail json 的 `meta`，
+  `markdown` 的顺序是 详情 title → noteCard → meta.displayTitle → 正文前 20 字。
+  漏了这层兜底，重抓会把已有标题覆盖成「小红书笔记 xxxxxxxx」。
 
 ### 6. `check` — 资产自检
 - 扫 `source/img/xhs` 下所有图片：`.webp` 必须真是 WebP，出现 `.jpg` 算「未迁移」。
