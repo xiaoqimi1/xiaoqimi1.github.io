@@ -13,6 +13,11 @@ description: '买来没穿过的婚纱终于派上了用场，这套真的很好
 仅分享，此条不互，可以互主页置顶那条
 <!-- more -->
 
+<div class="xhs-video">
+<video controls playsinline preload="metadata" poster="/img/xhs/6a4fdc83000000000f004be9/01.jpg" style="width:100%;border-radius:8px;"><source src="/img/xhs/6a4fdc83000000000f004be9/video.mp4" type="video/mp4">你的浏览器不支持 video 标签。
+</video>
+</div>
+
 {% gallery %}
 ![](/img/xhs/6a4fdc83000000000f004be9/01.jpg)
 ![](/img/xhs/6a4fdc83000000000f004be9/02.jpg)

@@ -280,9 +280,10 @@ def cmd_fetch(args) -> None:
     WORK.mkdir(parents=True, exist_ok=True)
     notes = json.load(open(WORK / "notes.json")) if (WORK / "notes.json").exists() else fetch_profile()
     have = existing_ids()
+    force = set(getattr(args, "ids", None) or [])       # 强制重抓（如给老视频笔记补视频）
     todo, skipped = [], []
     for n in notes:
-        if n["id"][:7] in have:
+        if n["id"][:7] in have and n["id"] not in force:
             continue
         if not getattr(args, "include_trade", False) and any(
                 w in (n["displayTitle"] or "") for w in TRADE_WORDS):
@@ -388,6 +389,77 @@ def to_jpeg(path: Path) -> None:
         im.convert("RGB").save(path, "JPEG", quality=88, optimize=True)
 
 
+# --- 4b. 视频 ---------------------------------------------------------------
+def pick_video(note: dict) -> tuple[dict, list[str]] | None:
+    """video.media.stream 里挑一路：优先 h264（EF4，浏览器兼容最好），
+    同编码内取分辨率最高的一路；返回 (stream, urls)。"""
+    stream = ((note.get("video") or {}).get("media") or {}).get("stream") or {}
+    best = None
+    for arr in stream.values():
+        for s in arr or []:
+            urls = [u for u in ([s.get("masterUrl") or ""] + list(s.get("backupUrls") or [])) if u]
+            if not urls:
+                continue
+            h264 = (s.get("videoCodec") or "").upper().startswith("EF4")
+            area = (s.get("width") or 0) * (s.get("height") or 0)
+            score = (1 if h264 else 0, area)
+            if best is None or score > best[0]:
+                best = (score, s, urls)
+    return (best[1], best[2]) if best else None
+
+
+def cmd_videos(args) -> None:
+    import requests
+
+    only = set(getattr(args, "ids", None) or [])
+    files = sorted(glob.glob(str(WORK / "detail_*.json")))
+    if only:
+        files = [f for f in files if Path(f).stem[7:] in only]
+    if not files:
+        raise SystemExit("没有可处理的 detail_*.json（先跑 fetch）")
+    ok = skipped = err = 0
+    for f in files:
+        nid = Path(f).stem[len("detail_"):]
+        note = json.load(open(f)).get("raw") or {}
+        if note.get("type") != "video":
+            skipped += 1
+            continue
+        picked = pick_video(note)
+        if not picked:
+            log(f"  {nid[:7]} !! 没有可用视频流")
+            err += 1
+            continue
+        s, urls = picked
+        n_dir = IMG_XHS / nid
+        n_dir.mkdir(parents=True, exist_ok=True)
+        out = n_dir / "video.mp4"
+        done = False
+        for url in urls:
+            for scheme in ("https://", "http://"):     # 主 CDN 常 403，备份 CDN 只走 http
+                u = re.sub(r"^https?://", scheme, url)
+                try:
+                    resp = requests.get(u, headers={**headers(), "Referer": f"{SITE}/"},
+                                        timeout=120)
+                    if resp.status_code != 200 or not resp.content:
+                        continue
+                    out.write_bytes(resp.content)
+                    log(f"  {nid[:7]} video {s.get('videoCodec')} "
+                        f"{s.get('width')}x{s.get('height')} {len(resp.content)/1048576:.1f}MB")
+                    done = True
+                    break
+                except Exception as e:
+                    log(f"    {nid[:7]} {scheme} 失败: {e}")
+            if done:
+                break
+        if done:
+            ok += 1
+        else:
+            log(f"  {nid[:7]} !! 视频下载失败")
+            err += 1
+        time.sleep(0.6)
+    log(f"视频完成 ok={ok} 非视频跳过={skipped} err={err}")
+
+
 # --- 5. 生成文章 -------------------------------------------------------------
 def clean_desc(desc: str) -> str:
     if not desc:
@@ -455,7 +527,21 @@ def cmd_markdown(_args) -> None:
         text = clean_desc(desc)
         if text:
             body += [text, "<!-- more -->"]
-        if imgs:
+        video = (IMG_XHS / nid / "video.mp4")
+        if video.exists():
+            poster = f"/img/xhs/{nid}/01.jpg" if imgs else ""
+            body += [
+                "",
+                '<div class="xhs-video">',
+                f'<video controls playsinline preload="metadata"'
+                + (f' poster="{poster}"' if poster else "")
+                + f' style="width:100%;border-radius:8px;">'
+                + f'<source src="/img/xhs/{nid}/video.mp4" type="video/mp4">'
+                + "你的浏览器不支持 video 标签。",
+                "</video>",
+                "</div>",
+            ]
+        if imgs and (len(imgs) > 1 or not video.exists()):
             body.append("")
             body.append("{% gallery %}")
             body += [f"![]({ '/img/xhs/%s/%02d.jpg' % (nid, i) })" for i in range(1, len(imgs) + 1)]
@@ -476,6 +562,7 @@ def cmd_all(args) -> None:
     cmd_list(args)
     cmd_fetch(args)
     cmd_images(args)
+    cmd_videos(args)
     cmd_markdown(args)
     log("\n下一步：pnpm run clean && pnpm run build 确认无 ERROR，再 commit + push。")
 
@@ -487,14 +574,18 @@ def main() -> None:
     sub.add_parser("list", help="列出 SSR 第一页并与博客比对")
     p = sub.add_parser("fetch", help="抓新增笔记详情")
     p.add_argument("--include-trade", action="store_true", help="连交易/出物类也抓（默认跳过）")
+    p.add_argument("--ids", nargs="*", help="强制重抓这些完整 note_id（如给已同步的视频笔记补视频）")
     p = sub.add_parser("images", help="下载图片")
     p.add_argument("--ids", nargs="*", help="只处理这些完整 note_id")
+    p = sub.add_parser("videos", help="下载视频笔记的 mp4（h264 优先）")
+    p.add_argument("--ids", nargs="*", help="只处理这些完整 note_id")
     sub.add_parser("markdown", help="生成 Hexo 文章")
-    sub.add_parser("all", help="cookies→list→fetch→images→markdown")
+    sub.add_parser("all", help="cookies→list→fetch→images→videos→markdown")
     args = ap.parse_args()
     os.makedirs(WORK, exist_ok=True)
     {"cookies": cmd_cookies, "list": cmd_list, "fetch": cmd_fetch,
-     "images": cmd_images, "markdown": cmd_markdown, "all": cmd_all}[args.cmd](args)
+     "images": cmd_images, "videos": cmd_videos, "markdown": cmd_markdown,
+     "all": cmd_all}[args.cmd](args)
 
 
 if __name__ == "__main__":

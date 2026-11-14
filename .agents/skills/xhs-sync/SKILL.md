@@ -40,6 +40,7 @@ $PY $S cookies      # 1. 从 Chrome cookie 库解出登录态 → .xhs-cookies.j
 $PY $S list         # 2. 主页 SSR 第一页 + 与 source/_posts 比对，标出新增/交易类
 $PY $S fetch        # 3. 抓新增笔记详情 → /tmp/opencode/xhs/detail_*.json
 $PY $S images       # 4. 下图片 → source/img/xhs/<note_id>/NN.jpg（WebP 自动转 JPEG）
+$PY $S videos       # 4b. 视频笔记下 mp4 → source/img/xhs/<note_id>/video.mp4（h264 优先）
 $PY $S markdown     # 5. 生成文章 → source/_posts/<id 前 7 位>.md
 
 pnpm run clean && pnpm run build     # 6. 本地验证，必须无 ERROR
@@ -77,19 +78,34 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
   `new (Map|Set|Date|WeakMap|WeakSet|Uint8Array|Array)(...)` 替换成 `null`，
   否则报 `Expecting value`（主页 SSR 一般不需要，详情页需要）。
 - 取 `noteDetailMap[id].note`：`desc`（正文，带 `#话题[话题]#`）、`imageList`（图片）、
-  `time`（ms）、`type`（video 笔记取 desc + 封面即可）。
+  `time`（ms）、`type`（normal / video）。
+- 视频笔记 `imageList` 只有封面，真正的视频在 `video.media.stream`；必须跑 `videos` 步骤。
+- 给**已同步过**的老笔记补抓（如补视频）：`fetch --ids <完整24位id> …` 会强制重抓，
+  之后 `videos --ids …` + `markdown` 重生成同名文章。
+- ⚠️ 老笔记（不在第一页）没有 `xsec_token`，`/explore/{id}` 会 302，抓不到，只能放弃。
 
 ### 4. `images` — 图片
 - xhscdn 带 `Referer: https://www.xiaohongshu.com/` 即可下载；URL 有时间戳路径，别缓存太久。
 - 存 `source/img/xhs/<完整 24 位 id>/NN.jpg`（按图序 01/02/…）。
 - ⚠️ xhscdn 现在默认回 **WebP**，仍按 `.jpg` 保存会得到「扩展名是 jpg 的 webp」。
   脚本用 Pillow 转成真 JPEG（quality 88），跟仓库历史图片一致。
+  （保留 WebP 其实更省体积，改的话要同步改 gallery/cover 的扩展名，目前维持 JPEG。）
+
+### 4b. `videos` — 视频
+- 视频直链在 `video.media.stream`，`EF4`=h264（兼容最好，**默认选它**），
+  `EF5`=h265/hevc（Firefox、部分安卓播不了，别当默认）。
+- ⚠️ `sns-video-v2.xhscdn.com` 的 masterUrl 一律 **403**；要改用 `backupUrls` 里的
+  `sns-bak-v*.xhscdn.com`（**只走 http**），带 `Referer` 才能拿到 mp4。
+- 存 `source/img/xhs/<id>/video.mp4`；实测 15 秒左右的视频 h264 约 1–6MB。
+- mp4 不在 `hexo-offline.config.cjs` 的预缓存 glob 里，不会被塞进 Service Worker，按需加载。
 
 ### 5. `markdown` — 文章
 - front-matter：`title` / `date`（笔记发布时间）/ `cover`(首图) / `cover_type: img` /
   `series`（命中主题词才有）/ `tags` / `categories: ["小红书"]` / `description`。
-- 正文：`desc` 去掉话题标记 → `<!-- more -->` → `{% gallery %}` 图片墙 →
+- 正文：`desc` 去掉话题标记 → `<!-- more -->` → 视频（有 `video.mp4` 时放原生
+  `<video controls poster=首图>`）→ `{% gallery %}` 图片墙 →
   `{% note info %}本文同步自小红书（柒柒）{% endnote %}`。
+- 视频笔记只有封面一张图时不再重复出画廊（poster 已经显示封面）。
 - ⚠️ `description` / `title` 必须清掉 `@ [ ]` 等 YAML 构造字符，否则 Hexo 报 `Process failed`。
 - 纯话题笔记（desc 只有 `#xxx[话题]#`）要兜底标题，正文只剩画廊也正常。
 - 文件名 = `id` 前 7 位（`<七位>.md`），图片目录用完整 24 位 id——两者不要搞反。
