@@ -39,10 +39,10 @@ S=.agents/skills/xhs-sync/scripts/xhs_sync.py
 $PY $S cookies      # 1. 从 Chrome cookie 库解出登录态 → .xhs-cookies.json
 $PY $S list         # 2. 主页 SSR 第一页 + 与 source/_posts 比对，标出新增/交易类
 $PY $S fetch        # 3. 抓新增笔记详情 → /tmp/opencode/xhs/detail_*.json
-$PY $S images       # 4. 下图片 → source/img/xhs/<note_id>/NN.jpg（WebP 自动转 JPEG）
+$PY $S images       # 4. 下图片 → source/img/xhs/<note_id>/NN.webp（统一 WebP）
 $PY $S videos       # 4b. 视频笔记下 mp4 → source/img/xhs/<note_id>/video.mp4（h264 优先）
 $PY $S markdown     # 5. 生成文章 → source/_posts/<id 前 7 位>.md
-$PY $S check        # 5b. 资产自检：图片都是真 JPEG、视频都被文章引用
+$PY $S check        # 5b. 资产自检：图片都是真 WebP、视频都被文章引用
 
 pnpm run clean && pnpm run build     # 6. 本地验证，必须无 ERROR
 git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=$PWD/.gitconfig-xiaoqi git push
@@ -87,27 +87,17 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
 
 ### 4. `images` — 图片
 - xhscdn 带 `Referer: https://www.xiaohongshu.com/` 即可下载；URL 有时间戳路径，别缓存太久。
-- 存 `source/img/xhs/<完整 24 位 id>/NN.jpg`（按图序 01/02/…）。
-- ⚠️ xhscdn 现在默认回 **WebP**，仍按 `.jpg` 保存会得到「扩展名是 jpg 的 webp」。
-  脚本用 Pillow 转成真 JPEG（quality 88），跟仓库历史图片一致。
+- 存 `source/img/xhs/<完整 24 位 id>/NN.webp`（按图序 01/02/…）。
+- xhscdn 回的是 **WebP**，脚本原样落盘（不重编码）；万一回 JPEG/PNG 才用 Pillow
+  转 WebP（quality 82, method=6）。
 
-**格式约定：一律真 JPEG（用户 2026-11-14 定）**
-- 新图继续存 `.jpg`，不切 WebP。理由：扩展名与实际内容一致，cover / gallery / PWA
-  预缓存 glob 都按扩展名走，历史 191 张也全是 JPEG，统一比省那点体积重要。
-- 校验魔数（不要只信扩展名）：JPEG 头 `FF D8 FF`，WebP 头 `RIFF....WEBP`。
-  `check` 子命令就是干这个的：`$PY $S check` → 「格式异常 N 张」必须为 0。
-- 发现「jpg 皮 webp 芯」的一键修法（就地替换同名文件，md 无需改）：
-  ```bash
-  .venv-xhs/bin/python - <<'EOF'
-  from PIL import Image
-  import pathlib
-  for p in pathlib.Path("source/img/xhs").rglob("*.jpg"):
-      if p.open("rb").read(4) == b"RIFF":
-          with Image.open(p) as im:
-              im.convert("RGB").save(p, "JPEG", quality=88, optimize=True)
-          print("fixed", p)
-  EOF
-  ```
+**格式约定：一律 WebP（用户 2026-11-14 定，当日先定 JPEG 后又改回 WebP）**
+- 图片统一存 `.webp`：扩展名与内容一致，体积比 JPEG 小约 28%（全站 191 张 33MB → 24MB）。
+- xhscdn 原本就回 WebP → 直接落盘，别转来转去；换来的是零重编码损失。
+- 引用一律按**磁盘实际文件名**生成（`.webp`），cover / gallery / video poster 三处都要跟上；
+  老文章迁移后要同步改 md 里的 `/img/xhs/<id>/NN.jpg` → `.webp`。
+- 校验魔数（不要只信扩展名）：WebP 头 `RIFF....WEBP`。`check` 会同时报「格式异常」
+  和「遗留 .jpg」，两者都必须是 0。
 
 ### 4b. `videos` — 视频
 - 视频直链在 `video.media.stream`，`EF4`=h264（兼容最好，**默认选它**），
@@ -129,7 +119,7 @@ git add -A && git commit -m "同步小红书新增N篇…" && GIT_CONFIG_GLOBAL=
 - 文件名 = `id` 前 7 位（`<七位>.md`），图片目录用完整 24 位 id——两者不要搞反。
 
 ### 6. `check` — 资产自检
-- 扫 `source/img/xhs/**/*.jpg` 的魔数，非真 JPEG 的报出来（并给出上文的 Pillow 修法）。
+- 扫 `source/img/xhs` 下所有图片：`.webp` 必须真是 WebP，出现 `.jpg` 算「未迁移」。
 - 扫 `source/img/xhs/*/video.mp4`，确认 `source/_posts/<七位>.md` 里引用了它，
   防止视频下了却忘了重跑 `markdown`（或文章被手改丢了播放器）。
 - 有异常就 `exit 1`；`all` 末尾会自动跑一次。

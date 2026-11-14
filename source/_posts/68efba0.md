@@ -1,7 +1,7 @@
 ---
 title: 米二可以穿自由防染色服
 date: 2025-10-15 23:13:09
-cover: /img/xhs/68efba050000000007032a72/01.jpg
+cover: /img/xhs/68efba050000000007032a72/01.webp
 cover_type: img
 series: "棉花娃娃"
 tags: ["棉花娃娃"]
@@ -13,7 +13,7 @@ description: '黑天鹅真的太能染色了，穿了不到一天拿下来一看
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/68efba050000000007032a72/01.jpg)
+![](/img/xhs/68efba050000000007032a72/01.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/68efba050000000007032a72)（柒柒）{% endnote %}

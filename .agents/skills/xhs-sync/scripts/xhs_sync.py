@@ -6,9 +6,11 @@
   cookies   从本机已登录的 Chrome cookie 库解出登录态 → .xhs-cookies.json
   list      抓主页 SSR 第一页，和 source/_posts 比对，列出「新增 / 已有」
   fetch     抓新增笔记的详情 SSR（自动跳过交易/出物类）
-  images    下载详情里的图片到 source/img/xhs/<note_id>/，WebP 转 JPEG
+  images    下载详情里的图片到 source/img/xhs/<note_id>/，统一存 WebP
+  videos    视频笔记下载 h264 mp4（masterUrl 403，走 backup CDN）
   markdown  生成 Hexo 文章（文件名取 id 前 7 位）
-  all       cookies → list → fetch → images → markdown
+  check     资产自检（图片都是真 WebP、视频都被文章引用）
+  all       cookies → list → fetch → images → videos → markdown → check
 
 依赖（一次性）：
   python3 -m venv .venv-xhs --system-site-packages
@@ -357,7 +359,6 @@ def cmd_images(args) -> None:
                 log(f"  {nid[:7]} img{idx}: 没有可用 URL")
                 err += 1
                 continue
-            path = n_dir / f"{idx:02d}.jpg"
             try:
                 resp = requests.get(url.replace("http://", "https://"),
                                     headers={**headers(), "Accept": "image/*,*/*;q=0.8"},
@@ -366,8 +367,7 @@ def cmd_images(args) -> None:
                     log(f"  {nid[:7]} img{idx}: HTTP {resp.status_code}")
                     err += 1
                     continue
-                path.write_bytes(resp.content)
-                to_jpeg(path)
+                path = save_webp(n_dir, idx, resp.content)
                 ok += 1
             except Exception as e:
                 log(f"  {nid[:7]} img{idx}: {e}")
@@ -377,16 +377,20 @@ def cmd_images(args) -> None:
     log(f"图片完成 ok={ok} err={err}")
 
 
-def to_jpeg(path: Path) -> None:
-    """xhscdn 现在默认回 WebP，统一转成真 JPEG，与仓库既有图片保持一致。"""
-    try:
-        from PIL import Image
-    except ImportError:
-        return
-    with Image.open(path) as im:
-        if im.format != "WEBP":
-            return
-        im.convert("RGB").save(path, "JPEG", quality=88, optimize=True)
+def save_webp(n_dir: Path, idx: int, data: bytes) -> Path:
+    """统一存成 NN.webp：xhscdn 本来就回 WebP 时原样落盘（不重编码，
+    避免二次损失），其它格式（jpeg/png）用 Pillow 转 WebP。"""
+    import io
+
+    from PIL import Image
+
+    out = n_dir / f"{idx:02d}.webp"
+    if probe_kind_bytes(data) == "webp":
+        out.write_bytes(data)
+        return out
+    with Image.open(io.BytesIO(data)) as im:
+        im.convert("RGB").save(out, "WEBP", quality=82, method=6)
+    return out
 
 
 # --- 4b. 视频 ---------------------------------------------------------------
@@ -507,14 +511,17 @@ def cmd_markdown(_args) -> None:
 
         ts = raw.get("time") or 0
         date = datetime.fromtimestamp(ts / 1000).strftime("%Y-%m-%d %H:%M:%S") if ts else "2024-01-01 00:00:00"
-        imgs = raw.get("imageList") or []
+        # 以磁盘上的实际文件为准（扩展名可能是 .webp 或历史遗留的 .jpg）
+        img_files = sorted(
+            (q.name for q in (IMG_XHS / nid).glob("*")
+             if q.suffix.lower() in (".webp", ".jpg", ".jpeg"))) if (IMG_XHS / nid).is_dir() else []
         tags = pick_tags(desc, title) or ["小红书"]
         series = pick_series(desc, title, tags)
         description = (clean_desc(desc)[:120] or title[:60]).replace("\n", " ").strip()
 
         fm = ["---", f"title: {title}", f"date: {date}"]
-        if imgs:
-            fm += [f"cover: /img/xhs/{nid}/01.jpg", "cover_type: img"]
+        if img_files:
+            fm += [f"cover: /img/xhs/{nid}/{img_files[0]}", "cover_type: img"]
         if series:
             fm.append(f"series: {json.dumps(series, ensure_ascii=False)}")
         fm.append("tags: " + json.dumps(tags, ensure_ascii=False))
@@ -529,7 +536,7 @@ def cmd_markdown(_args) -> None:
             body += [text, "<!-- more -->"]
         video = (IMG_XHS / nid / "video.mp4")
         if video.exists():
-            poster = f"/img/xhs/{nid}/01.jpg" if imgs else ""
+            poster = f"/img/xhs/{nid}/{img_files[0]}" if img_files else ""
             body += [
                 "",
                 '<div class="xhs-video">',
@@ -541,10 +548,10 @@ def cmd_markdown(_args) -> None:
                 "</video>",
                 "</div>",
             ]
-        if imgs and (len(imgs) > 1 or not video.exists()):
+        if img_files and (len(img_files) > 1 or not video.exists()):
             body.append("")
             body.append("{% gallery %}")
-            body += [f"![]({ '/img/xhs/%s/%02d.jpg' % (nid, i) })" for i in range(1, len(imgs) + 1)]
+            body += [f"![]({ '/img/xhs/%s/%s' % (nid, name) })" for name in img_files]
             body.append("{% endgallery %}")
         body += ["", f"{{% note info %}}本文同步自[小红书]({SITE}/explore/{nid})（柒柒）{{% endnote %}}"]
 
@@ -557,9 +564,8 @@ def cmd_markdown(_args) -> None:
 
 
 # --- 6. 自检 ---------------------------------------------------------------
-def probe_kind(path: Path) -> str:
-    with open(path, "rb") as f:
-        head = f.read(16)
+def probe_kind_bytes(data: bytes) -> str:
+    head = data[:16]
     if head[:3] == b"\xff\xd8\xff":
         return "jpeg"
     if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
@@ -569,12 +575,21 @@ def probe_kind(path: Path) -> str:
     return head[:4].hex() or "empty"
 
 
+def probe_kind(path: Path) -> str:
+    with open(path, "rb") as f:
+        return probe_kind_bytes(f.read(16))
+
+
 def cmd_check(_args) -> None:
-    """资产自检：.jpg 必须是真 JPEG；视频目录要有 mp4 且文章里引用了它。"""
-    bad = []
-    for p in sorted(IMG_XHS.rglob("*.jpg")):
+    """资产自检：图片必须是真 WebP（无遗留 .jpg）；视频目录要有 mp4 且文章引用了它。"""
+    bad, legacy = [], []
+    for p in sorted(IMG_XHS.rglob("*")):
+        if p.suffix.lower() not in (".webp", ".jpg", ".jpeg"):
+            continue
         kind = probe_kind(p)
-        if kind != "jpeg":
+        if p.suffix.lower() != ".webp":
+            legacy.append(p)
+        elif kind != "webp":
             bad.append((p, kind))
     vdirs = sorted({p.parent for p in IMG_XHS.rglob("video.mp4")})
     orphan = []
@@ -583,13 +598,16 @@ def cmd_check(_args) -> None:
         if not post.exists() or "video.mp4" not in post.read_text():
             orphan.append(d.name)
 
-    log(f"图片 {len(list(IMG_XHS.rglob('*.jpg')))} 张，格式异常 {len(bad)} 张")
+    log(f"图片 {len(list(IMG_XHS.rglob('*.webp')))} 张，格式异常 {len(bad)} 张，"
+        f"遗留 .jpg {len(legacy)} 张")
     for p, kind in bad:
-        log(f"  !! {p} 实际是 {kind}（需要 Pillow 转真 JPEG）")
+        log(f"  !! {p} 实际是 {kind}（需要 Pillow 转 WebP）")
+    for p in legacy:
+        log(f"  !! {p} 还是 .jpg，需要迁移成 .webp")
     log(f"视频 {len(vdirs)} 条，文章未引用 {len(orphan)} 条")
     for nid in orphan:
         log(f"  !! {nid} 有 video.mp4 但 source/_posts/{nid[:7]}.md 没引用")
-    if bad or orphan:
+    if bad or legacy or orphan:
         raise SystemExit("自检未通过")
     log("自检通过")
 

@@ -1,7 +1,7 @@
 ---
 title: 收到的黑猫乌萨奇
 date: 2024-12-01 12:54:04
-cover: /img/xhs/674bebec000000000703414d/01.jpg
+cover: /img/xhs/674bebec000000000703414d/01.webp
 cover_type: img
 series: "chiikawa 收藏"
 tags: ["chiikawa"]
@@ -13,11 +13,11 @@ description: '啊啊啊啊啊啊好可爱好可爱！不愧是我一眼看上的
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/674bebec000000000703414d/01.jpg)
-![](/img/xhs/674bebec000000000703414d/02.jpg)
-![](/img/xhs/674bebec000000000703414d/03.jpg)
-![](/img/xhs/674bebec000000000703414d/04.jpg)
-![](/img/xhs/674bebec000000000703414d/05.jpg)
+![](/img/xhs/674bebec000000000703414d/01.webp)
+![](/img/xhs/674bebec000000000703414d/02.webp)
+![](/img/xhs/674bebec000000000703414d/03.webp)
+![](/img/xhs/674bebec000000000703414d/04.webp)
+![](/img/xhs/674bebec000000000703414d/05.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/674bebec000000000703414d)（柒柒）{% endnote %}

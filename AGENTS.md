@@ -53,7 +53,7 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 
 **发文章流程**：写 Markdown → `pnpm run publish`（或手动 `git add/commit/push`）→ GitHub Actions 构建 → 发布到线上，约 1 分钟。
 
-> 📌 小红书同步与博客维护的完整经验都在 skill 里：`.agents/skills/xhs-sync/SKILL.md`（同步小红书笔记）、`.agents/skills/blog-site/SKILL.md`（写文/定制/发布/踩坑）。同步一句话版：解本机 Chrome cookie 库拿登录态 → 主页 SSR 第一页比对新增 → 详情 SSR → 下图片（WebP 转 JPEG）→ 生成文章（文件名 7 位）→ build → push。**绝对不要新开浏览器实例**（会被判新设备、触发「登录设备超限」把用户踢下线），全程只用 requests + cookie。命令：`.venv-xhs/bin/python .agents/skills/xhs-sync/scripts/xhs_sync.py all`。
+> 📌 小红书同步与博客维护的完整经验都在 skill 里：`.agents/skills/xhs-sync/SKILL.md`（同步小红书笔记）、`.agents/skills/blog-site/SKILL.md`（写文/定制/发布/踩坑）。同步一句话版：解本机 Chrome cookie 库拿登录态 → 主页 SSR 第一页比对新增 → 详情 SSR → 下图片（统一 WebP）→ 下视频（h264 mp4）→ 生成文章（文件名 7 位）→ build → push。**绝对不要新开浏览器实例**（会被判新设备、触发「登录设备超限」把用户踢下线），全程只用 requests + cookie。命令：`.venv-xhs/bin/python .agents/skills/xhs-sync/scripts/xhs_sync.py all`。
 
 ## 部署架构（重要）
 
@@ -126,7 +126,7 @@ print('saved /tmp/opencode/attachment.'+ext)
 4. 修改主题时优先用 `inject.head` 注入 CSS，尽量不改 `themes/butterfly/` 源码，便于升级。
 5. 本机 `hexo server` 会常驻后台，重建前先停掉（用端口 PID 精确 kill，别用 `pkill -f 'hexo server'`，会误杀执行命令的 shell）。
 6. token 轮换：更新 `.git-xiaoqi-credentials`（格式 `https://xiaoqimi1:<token>@github.com`）。
-7. **小红书图片一律真 JPEG**：xhscdn 下发的是 WebP，按 `.jpg` 存会得到「jpg 皮 webp 芯」。同步脚本用 Pillow 转真 JPEG，`python .agents/skills/xhs-sync/scripts/xhs_sync.py check` 可校验（当前 191 张全为真 JPEG）。
+7. **小红书图片一律 WebP**：xhscdn 本来就回 WebP，直接存 `.webp`，别再转 JPEG。历史 191 张已于 2026-11-14 迁移成 WebP（33MB → 24MB），文章里的 cover/gallery 引用同步改成 `.webp`；`python .agents/skills/xhs-sync/scripts/xhs_sync.py check` 可校验（禁止遗留 `.jpg`）。
 8. **视频笔记要单独下载**：视频只在 `video.media.stream` 里，`imageList` 只有封面；直链 `sns-video-v2.xhscdn.com` 一律 403，须走 `backupUrls` 的 `sns-bak-v*.xhscdn.com`（仅 http）。细节见 `xhs-sync/SKILL.md` 的 `videos` 一节。
 
 ## 经验沉淀（skill）

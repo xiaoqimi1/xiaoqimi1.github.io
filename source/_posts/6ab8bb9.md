@@ -1,7 +1,7 @@
 ---
 title: 克里斯汀萌
 date: 2026-09-27 14:45:36
-cover: /img/xhs/6ab8bb900000000015014f5a/01.jpg
+cover: /img/xhs/6ab8bb900000000015014f5a/01.webp
 cover_type: img
 series: "棉花娃娃"
 tags: ["BJD", "棉花娃娃"]
@@ -13,7 +13,7 @@ description: '怕原衣染色就没穿，翻出买了挺久没穿过的娃衣，
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/6ab8bb900000000015014f5a/01.jpg)
+![](/img/xhs/6ab8bb900000000015014f5a/01.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/6ab8bb900000000015014f5a)（柒柒）{% endnote %}

@@ -1,7 +1,7 @@
 ---
 title: 吐槽一下，没登记上。。。。
 date: 2026-09-06 13:22:59
-cover: /img/xhs/6a9cf8b30000000026023079/01.jpg
+cover: /img/xhs/6a9cf8b30000000026023079/01.webp
 cover_type: img
 series: "喵喵喵次方"
 tags: ["BJD", "喵喵喵次方"]
@@ -14,10 +14,10 @@ description: '月光童话物语Lunar Lore 能不能帮我查一下，188+赞的
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/6a9cf8b30000000026023079/01.jpg)
-![](/img/xhs/6a9cf8b30000000026023079/02.jpg)
-![](/img/xhs/6a9cf8b30000000026023079/03.jpg)
-![](/img/xhs/6a9cf8b30000000026023079/04.jpg)
+![](/img/xhs/6a9cf8b30000000026023079/01.webp)
+![](/img/xhs/6a9cf8b30000000026023079/02.webp)
+![](/img/xhs/6a9cf8b30000000026023079/03.webp)
+![](/img/xhs/6a9cf8b30000000026023079/04.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/6a9cf8b30000000026023079)（柒柒）{% endnote %}

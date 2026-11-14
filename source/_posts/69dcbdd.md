@@ -1,7 +1,7 @@
 ---
 title: 异色记录
 date: 2026-04-13 17:56:36
-cover: /img/xhs/69dcbdd4000000002200de3d/01.jpg
+cover: /img/xhs/69dcbdd4000000002200de3d/01.webp
 cover_type: img
 series: "洛克王国"
 tags: ["洛克王国"]
@@ -13,9 +13,9 @@ description: '洛克王国异色'
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/69dcbdd4000000002200de3d/01.jpg)
-![](/img/xhs/69dcbdd4000000002200de3d/02.jpg)
-![](/img/xhs/69dcbdd4000000002200de3d/03.jpg)
+![](/img/xhs/69dcbdd4000000002200de3d/01.webp)
+![](/img/xhs/69dcbdd4000000002200de3d/02.webp)
+![](/img/xhs/69dcbdd4000000002200de3d/03.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/69dcbdd4000000002200de3d)（柒柒）{% endnote %}

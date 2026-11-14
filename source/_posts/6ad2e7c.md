@@ -1,7 +1,7 @@
 ---
 title: 悸动瞬息你啥意思啊
 date: 2026-10-17 11:13:15
-cover: /img/xhs/6ad2e7cb000000001203c66f/01.jpg
+cover: /img/xhs/6ad2e7cb000000001203c66f/01.webp
 cover_type: img
 tags: ["BJD"]
 categories: ["小红书"]
@@ -14,9 +14,9 @@ description: '挑衅我？？？每句话都加个哈字啥意思啊 何意味�
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/6ad2e7cb000000001203c66f/01.jpg)
-![](/img/xhs/6ad2e7cb000000001203c66f/02.jpg)
-![](/img/xhs/6ad2e7cb000000001203c66f/03.jpg)
+![](/img/xhs/6ad2e7cb000000001203c66f/01.webp)
+![](/img/xhs/6ad2e7cb000000001203c66f/02.webp)
+![](/img/xhs/6ad2e7cb000000001203c66f/03.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/6ad2e7cb000000001203c66f)（柒柒）{% endnote %}

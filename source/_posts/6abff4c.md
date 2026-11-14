@@ -1,7 +1,7 @@
 ---
 title: 寄予宇宙异隐娃衣
 date: 2026-10-03 02:15:36
-cover: /img/xhs/6abff4c8000000001802f52d/01.jpg
+cover: /img/xhs/6abff4c8000000001802f52d/01.webp
 cover_type: img
 series: "棉花娃娃"
 tags: ["BJD", "棉花娃娃"]
@@ -14,8 +14,8 @@ description: '闪光灯拍出来很闪，但是还是挺好看的 看上去很�
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/6abff4c8000000001802f52d/01.jpg)
-![](/img/xhs/6abff4c8000000001802f52d/02.jpg)
+![](/img/xhs/6abff4c8000000001802f52d/01.webp)
+![](/img/xhs/6abff4c8000000001802f52d/02.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/6abff4c8000000001802f52d)（柒柒）{% endnote %}

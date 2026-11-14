@@ -1,7 +1,7 @@
 ---
 title: 连续五个绿色炫彩。。。。
 date: 2026-07-19 01:55:46
-cover: /img/xhs/6a5bbe22000000000f028b86/01.jpg
+cover: /img/xhs/6a5bbe22000000000f028b86/01.webp
 cover_type: img
 series: "洛克王国"
 tags: ["洛克王国"]
@@ -14,12 +14,12 @@ description: '到底要干嘛。。。。 出一个绿的就差不多了还来�
 <!-- more -->
 
 {% gallery %}
-![](/img/xhs/6a5bbe22000000000f028b86/01.jpg)
-![](/img/xhs/6a5bbe22000000000f028b86/02.jpg)
-![](/img/xhs/6a5bbe22000000000f028b86/03.jpg)
-![](/img/xhs/6a5bbe22000000000f028b86/04.jpg)
-![](/img/xhs/6a5bbe22000000000f028b86/05.jpg)
-![](/img/xhs/6a5bbe22000000000f028b86/06.jpg)
+![](/img/xhs/6a5bbe22000000000f028b86/01.webp)
+![](/img/xhs/6a5bbe22000000000f028b86/02.webp)
+![](/img/xhs/6a5bbe22000000000f028b86/03.webp)
+![](/img/xhs/6a5bbe22000000000f028b86/04.webp)
+![](/img/xhs/6a5bbe22000000000f028b86/05.webp)
+![](/img/xhs/6a5bbe22000000000f028b86/06.webp)
 {% endgallery %}
 
 {% note info %}本文同步自[小红书](https://www.xiaohongshu.com/explore/6a5bbe22000000000f028b86)（柒柒）{% endnote %}
