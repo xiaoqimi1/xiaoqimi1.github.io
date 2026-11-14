@@ -61,8 +61,13 @@ pnpm run publish                      # = git add -A + commit + GIT_CONFIG_GLOBA
    URL 栏收起导致视口变高、`cover` 重算的问题，勿改回 `100%` / `100vh`。
 4. **public/ 缓存**：改配置后本地 `hexo server` 会用旧渲染；改主题色/样式先 `clean` 再 `build`，
    需要预览就重启 server。停 server 用端口 PID 精确 kill，别 `pkill -f 'hexo server'`（会误杀命令自身 shell）。
-5. **PWA/Service Worker**：`hexo-offline` 只在 `hexo generate` 时写 `public/service-worker.js` 并注入注册脚本
-   （本地 `hexo server` 看不到属正常）。改完内容后旧页面可能仍显示缓存，硬刷新或清站点数据即可。
+5. **PWA/Service Worker**：`hexo-offline` 只在 `hexo generate` 时写 `public/service-worker.js`。
+   **铁律：HTML 和图片不许进 `globPatterns`**——导航一旦命中预缓存，发新文章后下拉刷新永远看不到新内容
+   （2026-11-15 踩过：旧的 346 文件 / 34MB 预缓存 + 无更新钩子）。现在的策略是
+   「预缓存只放壳（css/js/字体，约 320KB）+ 导航 NetworkFirst + 图片 CacheFirst」，
+   注册脚本换成 `source/js/sw-register.js`（`updateViaCache:'none'` + 主动 `update()` +
+   `controllerchange` 自动刷新），由 `scripts/pwa-update.js` 在 `before_exit` 优先级 99 替换 hexo-offline 的内联脚本。
+   本地要测 PWA 用 `python3 -m http.server 4000 -d public`（`hexo server` 不生成 SW）。
 6. **PWA 图标别留白边**：maskable 图标要让内容铺满画布，头像背景色 `rgb(100,153,123)` 铺四角；
    512/192 用 `png({palette:true, colours:255})` 压缩，否则照片 PNG 会到 450KB。
 7. **CNAME 不能删**：`source/CNAME` 会进 `public/` 根目录，是自定义域名生效的关键。

@@ -64,14 +64,19 @@ pnpm run publish          # git add -A + commit + push（推 main 触发 Actions
 
 ## PWA（离线 / 可安装）
 
-- 由 `hexo-offline` 实现：构建时用 workbox 生成 `public/service-worker.js`，并把注册脚本注入 `public/index.html`；同时在 `<head>` 注入 manifest / apple-touch-icon / favicon 链接（来自主题自带 `pwa` 配置）。
-- 关键文件：
-  - `hexo-offline.config.cjs`：workbox 配置（预缓存 glob、jsdelivr/unpkg/字体 CDN 运行时缓存、`skipWaiting` + `clientsClaim`）
-  - `source/manifest.json`：应用清单（name/theme_color/start_url/icons），构建后落到 `public/` 根目录
-  - `source/img/pwa/`：图标由**头像照片**（`source/img/avatar.jpg`）生成（favicon-16/32、icon-192/512、maskable-192/512、apple-touch-icon 180），与头像取景一致
+- 由 `hexo-offline`（workbox-build `generateSW`）生成 `public/service-worker.js`；`<head>` 里的 manifest / apple-touch-icon / favicon 来自主题自带 `pwa` 配置。
+- **缓存策略（2026-11-15 重构，别改回去）**：
+  - 预缓存只放「壳」：`**/*.{js,mjs,css,woff2,woff,ttf,eot,svg}` → 实测 8 个文件 / 323KB。**HTML 和图片不能进预缓存**，否则导航永远命中 Cache Storage，发新文章后下拉刷新看不到（旧方案 346 文件 / 34MB，是「PWA 刷新不出新内容」的根因）。
+  - 导航：`({request}) => request.mode === 'navigate'` → `NetworkFirst`（`pages` 缓存，3s 超时，40 页 / 7 天）。
+  - 图片：同源 `/img/**`（排除 `.mp4`）→ `CacheFirst`（`images` 缓存，300 张 / 30 天）。
+  - CDN（jsdelivr / unpkg / Google 字体）保持原来的运行时缓存；`cleanupOutdatedCaches` 已开。
+  - mp4 不做任何缓存：一条视频可能 95MB。
+- **注册与更新**：`hexo-offline` 只会往 `index.html` 塞一段「只打日志」的内联注册脚本，且没有关闭开关，所以：
+  - `source/js/sw-register.js`：`register('/service-worker.js', {updateViaCache:'none'})`，绕开 GitHub Pages 给 `sw.js` 的 `max-age=600`；load / visibilitychange / focus / online 时 `reg.update()`，突破 Chrome 24h 检查节流；`controllerchange` 后自动刷新一次（15 秒防循环、输入框聚焦时等 blur、离线不刷、首次安装不刷）。
+  - `scripts/pwa-update.js`：Hexo filter（`before_exit`，优先级 99，在 hexo-offline 之后）把那段内联脚本替换成 `/js/sw-register.js`，并注入到**所有** HTML 页面。
 - 换图标流程：重新裁好 `source/img/avatar.jpg`（400×400）后，用 sharp 从它导出各尺寸 PNG（512/192 建议 `png({palette:true, colours:256})` 压缩，否则照片 PNG 可达 450KB），覆盖 `source/img/pwa/` 下同名文件，保持 `manifest.json` 里路径不变。
-- 已验证：`pnpm run build` 后 `public/` 含 `service-worker.js`（预缓存全部静态资源，约 1.5MB）、`manifest.json`、图标，`index.html` 末尾注入 SW 注册脚本。
-- 注意：SW 注册脚本只在 `hexo generate` 阶段写入 `public/`，本地 `hexo server` 预览页不会显示（属正常，部署即生效）。PWA 需 HTTPS，线上已满足。
+- 本地验证 PWA：`hexo server` 不生成 SW（不会跑 `before_exit`），要测就用 `pnpm run build` 后 `python3 -m http.server 4000 -d public`（`localhost` 属于安全上下文，SW 可用）。
+- 线上验证：`curl -s https://777.hanphone.cn/service-worker.js | grep -c index.html` 应为 0，precache 清单只剩 css/js。
 
 ## 远程图片接收流程（OpenChamber 附件）
 
