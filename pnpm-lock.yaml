@@ -36,8 +36,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       hexo-offline:
-        specifier: ^4.0.0
-        version: 4.0.0(hexo@8.1.2(chokidar@3.6.0))
+        specifier: ^5.0.0
+        version: 5.0.0(hexo@8.1.2(chokidar@3.6.0))
       hexo-renderer-marked:
         specifier: ^7.0.0
         version: 7.0.1
@@ -1451,9 +1451,9 @@ packages:
     resolution: {integrity: sha512-i2Sgxk8Cgx5viSjq5qW5N/rBFfwoCKQcH8qnnW1fawCapcdEAhIsq+Y3vbrs9bssyDlyU6Vqm4oQmosREaNI7Q==}
     engines: {node: '>=14'}
 
-  hexo-offline@4.0.0:
-    resolution: {integrity: sha512-0KHbVav7Pq0tSYdg9kglYbwl62ksKhMjULa6QG7/onHXHOxZ1FSWC+VGmesk99m3f7t+rQNpwVcjK1HAl1/dMA==}
-    engines: {node: '>=20'}
+  hexo-offline@5.0.0:
+    resolution: {integrity: sha512-UudR4KhuAeN78gfFBqHH6wa1lAseGsGgiG2KlZ049rXWL0Z6AqKKSGXBtvJI2eIBQQ+dep76REH39lI94i1QGw==}
+    engines: {node: ^20.17.0 || >=22.5.0}
     peerDependencies:
       hexo: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
 
@@ -4117,7 +4117,7 @@ snapshots:
     dependencies:
       picocolors: 1.1.1
 
-  hexo-offline@4.0.0(hexo@8.1.2(chokidar@3.6.0)):
+  hexo-offline@5.0.0(hexo@8.1.2(chokidar@3.6.0)):
     dependencies:
       hexo: 8.1.2(chokidar@3.6.0)
       workbox-build: 7.4.1
